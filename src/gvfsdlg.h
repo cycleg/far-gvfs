@@ -18,6 +18,7 @@ struct InitDialogItem
     int DefaultButton;
     int lngIdx;
     std::wstring text;
+    int maxLen;
 };
 
 bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint);

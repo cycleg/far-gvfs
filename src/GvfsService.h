@@ -10,19 +10,21 @@ class GvfsService
 public:
     GvfsService();
 
-    bool mount(const std::string& resPath, const std::string &userName,
-               const std::string &password) throw(GvfsServiceException);
-    bool umount(const std::string& resPath) throw(GvfsServiceException);
+    inline const std::string& getMountName() const { return m_mountName; }
+    inline const std::string& getMountPath() const { return m_mountPath; }
 
-    std::string m_mountName;
-    std::string m_mountPath;
+    bool mount(const std::string& resPath, const std::string &userName,
+               const std::string &password) throw(GvfsServiceException, Glib::Error);
+    bool umount(const std::string& resPath) throw(GvfsServiceException, Glib::Error);
 
 private:
     void mount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
     bool unmount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
 
     int m_mountCount;
-    Glib::RefPtr<Gio::File> file;
-    Glib::RefPtr<Glib::MainLoop> main_loop;
+    std::string m_mountName;
+    std::string m_mountPath;
+    Glib::RefPtr<Gio::File> m_file;
+    Glib::RefPtr<Glib::MainLoop> m_mainLoop;
     std::shared_ptr<GvfsServiceException> m_exception;
 };

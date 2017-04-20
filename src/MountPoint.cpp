@@ -5,21 +5,18 @@
 #include "MountPoint.h"
 
 MountPoint::MountPoint():
-    m_bMounted(false)
+    m_bMounted(false),
+    m_type(FileSystem::NoFs)
 {
 }
 
 MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, const std::wstring &password) :
     m_bMounted(false),
+    m_type(FileSystem::NoFs),
     m_resPath(resPath),
     m_user(user),
     m_password(password)
 {
-}
-
-MountPoint::FileSystem MountPoint::getFsType() const
-{
-    return this->type;
 }
 
 bool MountPoint::mount() throw(GvfsServiceException)
@@ -37,8 +34,10 @@ bool MountPoint::mount() throw(GvfsServiceException)
     if (success)
     {
         m_bMounted = true;
-        m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(service.m_mountName);
-        m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t>>().from_bytes(service.m_mountPath);
+        m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                      .from_bytes(service.getMountName());
+        m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                           .from_bytes(service.getMountPath());
     }
     return success;
 }

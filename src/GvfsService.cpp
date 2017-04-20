@@ -7,7 +7,8 @@ GvfsService::GvfsService() :
 }
 
 bool GvfsService::mount(const std::string &resPath, const std::string &userName,
-                        const std::string &password) throw(GvfsServiceException)
+                        const std::string &password)
+    throw(GvfsServiceException, Glib::Error)
 {
     m_exception.reset();
 
@@ -15,9 +16,9 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
     // not need because of use Glib::MainLoop
     // Glib::init(); 
 
-    main_loop = Glib::MainLoop::create(false);
+    m_mainLoop = Glib::MainLoop::create(false);
 
-    file = Gio::File::create_for_parse_name(resPath);
+    m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
 
     bool l_anonymous = userName.empty() && password.empty();
@@ -72,19 +73,19 @@ std::cerr << "on signal_ask_question: " << msg << std::endl;
     bool l_mounted = false;
     try
     {
-        file->mount_enclosing_volume(mount_operation,
-                                     [this] (Glib::RefPtr<Gio::AsyncResult>& result)
-                                     {
-                                        this->mount_cb(result);
-                                     });
+        m_file->mount_enclosing_volume(mount_operation,
+                                       [this] (Glib::RefPtr<Gio::AsyncResult>& result)
+                                       {
+                                          this->mount_cb(result);
+                                       });
         m_mountCount++;
 std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::endl;
         if(m_mountCount > 0)
         {
-            main_loop->run();
+            m_mainLoop->run();
         }
-        m_mountName = file->find_enclosing_mount()->get_name();
-        m_mountPath = file->find_enclosing_mount()->get_default_location()->get_path();
+        m_mountName = m_file->find_enclosing_mount()->get_name();
+        m_mountPath = m_file->find_enclosing_mount()->get_default_location()->get_path();
         std::cout << "GvfsService::mount() name: " << m_mountName << std::endl;
         std::cout << "GvfsService::mount() path: " << m_mountPath << std::endl;
         l_mounted = true;
@@ -93,12 +94,15 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
     {
         std::cerr << "GvfsService::mount() Glib::Error: " << ex.what() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
-        throw *m_exception;
+        if (m_exception.get() != nullptr)
+            throw *m_exception;
+            else throw;
     }
     return l_mounted;
 }
 
-bool GvfsService::umount(const std::string &resPath) throw(GvfsServiceException)
+bool GvfsService::umount(const std::string &resPath)
+    throw(GvfsServiceException, Glib::Error)
 {
     m_exception.reset();
 
@@ -106,15 +110,15 @@ bool GvfsService::umount(const std::string &resPath) throw(GvfsServiceException)
     // not need because of use Glib::MainLoop
     // Glib::init();
 
-    main_loop = Glib::MainLoop::create(false);
+    m_mainLoop = Glib::MainLoop::create(false);
 
-    file = Gio::File::create_for_parse_name(resPath);
+    m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
 
     bool l_unmounted = false;
     try
     {
-        Glib::RefPtr<Gio::Mount> mount = file->find_enclosing_mount();
+        Glib::RefPtr<Gio::Mount> mount = m_file->find_enclosing_mount();
         mount->unmount(mount_operation,
                                      [&l_unmounted, this] (Glib::RefPtr<Gio::AsyncResult>& result)
                                      {
@@ -124,7 +128,7 @@ bool GvfsService::umount(const std::string &resPath) throw(GvfsServiceException)
 std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::endl;
         if(m_mountCount > 0)
         {
-            main_loop->run();
+            m_mainLoop->run();
         }
         
     }
@@ -132,7 +136,14 @@ std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::
     {
         std::cerr << "GvfsService::umount() Glib::Error: "<< ex.what() << std::endl
                   << "m_mountCount: " << m_mountCount;
-        throw *m_exception;
+        if (m_exception.get() != nullptr)
+            throw *m_exception;
+            else throw;
+    }
+    if (l_unmounted)
+    {
+        m_mountPath.clear();
+        m_mountName.clear();
     }
     return l_unmounted;
 }
@@ -142,7 +153,7 @@ void GvfsService::mount_cb(Glib::RefPtr<Gio::AsyncResult>& result)
 std::cerr << "GvfsService::mount_cb()" << std::endl;
     try
     {
-        file->mount_enclosing_volume_finish(result);
+        m_file->mount_enclosing_volume_finish(result);
     }
     catch(const Glib::Error& ex)
     {
@@ -156,7 +167,7 @@ std::cerr << "GvfsService::mount_cb() dec m_mountCount: " << m_mountCount << std
 
     if(m_mountCount == 0)
     {
-        main_loop->quit();
+        m_mainLoop->quit();
     }
 }
 
@@ -182,7 +193,7 @@ std::cerr << "GvfsService::unmount_cb() dec m_mountCount: " << m_mountCount << s
 
     if(m_mountCount == 0)
     {
-        main_loop->quit();
+        m_mainLoop->quit();
     }
     return success;
 }

@@ -213,9 +213,8 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t **Name, int OpMode)
     if(GetLoginData(this->m_pPsi, mountPoint))
     {
         m_mountPoints.insert(std::pair<std::wstring, MountPoint>(mountPoint.getResPath(), mountPoint));
-        return 1;
     }
-    return 0;
+    return 1;
 }
 
 int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int OpMode)

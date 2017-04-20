@@ -5,19 +5,21 @@
 
 class MountPoint
 {
-  enum class FileSystem {
-      DiskFs,
-      Scp,
-      Nfs,
-      Samba,
-      WebDav
-  } type;
-
   public:
+    enum class FileSystem {
+        NoFs,
+        DiskFs,
+        Scp,
+        Nfs,
+        Samba,
+        WebDav
+    };
+
     MountPoint();
     MountPoint(const std::wstring& resPath, const std::wstring& user, const std::wstring& password);
 
     inline bool isMounted() const { return m_bMounted; }
+    inline FileSystem getFsType() const { return m_type; }
     inline const std::wstring& getFsPath() const { return m_mountPointPath; }
     inline const std::wstring& getMountName() const { return m_shareName; }
     inline const std::wstring& getResPath() const { return m_resPath; }
@@ -28,12 +30,12 @@ class MountPoint
     inline void setUser(const wchar_t* s) { this->m_user = s; }
     inline void setPassword(const wchar_t* s) { this->m_password = s; }
 
-    enum FileSystem getFsType() const;
     bool mount() throw(GvfsServiceException);
     bool unmount() throw(GvfsServiceException);
 
   private:
     bool m_bMounted;
+    FileSystem m_type;
     std::wstring m_resPath;
     std::wstring m_user;
     std::wstring m_password;
