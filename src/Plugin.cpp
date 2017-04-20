@@ -48,6 +48,10 @@ void Plugin::exitFar()
             {
                 // ignore error here
             }
+            catch (const Glib::Error& error)
+            {
+                // ignore error here
+            }
     }
 }
 
@@ -194,6 +198,17 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t *Dir, int OpMode)
                                    NULL, msgItems, 2, 0);
                     return 0;
                 }
+                catch (const Glib::Error& error)
+                {
+                    const wchar_t *msgItems[2];
+                    std::wstring buf =
+                        std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
+                    msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MMountError);
+                    msgItems[1] = buf.c_str();
+                    m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                                   NULL, msgItems, 2, 0);
+                    return 0;
+                }
             // change directory to:
             std::wstring dir = it->second.getFsPath();
             if (!dir.empty())
@@ -245,6 +260,16 @@ int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumb
                     it->second.unmount();
                 }
                 catch (const GvfsServiceException& error)
+                {
+                    const wchar_t *msgItems[2];
+                    std::wstring buf =
+                        std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
+                    msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MUnmountError);
+                    msgItems[1] = buf.c_str();
+                    m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                                   NULL, msgItems, 2, 0);
+                }
+                catch (const Glib::Error& error)
                 {
                     const wchar_t *msgItems[2];
                     std::wstring buf =
