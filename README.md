@@ -20,7 +20,9 @@ WebDAV, SMB и др.).
 
 Установки зависимостей сборки в Debian (Ubuntu):
 
-apt-get install gtkmm-3.0-dev uuid-dev
+```
+apt-get install libgtkmm-3.0-dev uuid-dev
+```
 
 Для сборки дополнение помещается в дерево исходного кода far2l в виде
 поддиректории, например, если код far2l развернут в директорию "far2l",
