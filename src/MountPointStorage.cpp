@@ -10,13 +10,13 @@
 const wchar_t* MountPointStorage::StoragePath = L"Resources";
 
 MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
-  m_registryFolder(registryFolder);
+  m_registryFolder(registryFolder)
 {
   m_registryFolder.append(WGOOD_SLASH);
   m_registryFolder.append(StoragePath);
 }
 
-MountPoint MountPointStorage::Factory()
+MountPoint MountPointStorage::PointFactory()
 {
   MountPoint point;
   GenerateId(point.m_storageId);
@@ -37,9 +37,9 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
 	}
   do
   {
-    wchar_t subKey[FAR_MAX_REG];
+    wchar_t subKey[MAX_PATH];
     FILETIME tTime;
-    DWORD subKeySize = FAR_MAX_REG * sizeof(wchar_t);
+    DWORD subKeySize = MAX_PATH * sizeof(wchar_t);
     std::memset(subKey, 0, subKeySize);
     res = WINPORT(RegEnumKeyEx)(hKey, index, subKey, &subKeySize, 0, nullptr,
                                 nullptr, &tTime);
@@ -84,18 +84,19 @@ bool MountPointStorage::Save(const MountPoint& point) const
   return ret;
 }
 
-void MountPointStorage::Delete(const std::wstring& id) const
+void MountPointStorage::Delete(const MountPoint& point) const
 {
 	HKEY hKey = nullptr;
   std::wstring key = m_registryFolder;
   key.append(WGOOD_SLASH);
-  key.append(id);
-  res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, key.c_str(), 0, KEY_WRITE, &hKey);
+  key.append(point.m_storageId);
+  LONG res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, key.c_str(), 0,
+                                   KEY_WRITE, &hKey);
   // no key - nothing to delete
   if (res != ERROR_SUCCESS) return;
   WINPORT(RegCloseKey)(hKey);
   res = WINPORT(RegDeleteKey)(HKEY_CURRENT_USER, key.c_str());
-  WINPORT(SetLastError)(nRes);
+  WINPORT(SetLastError)(res);
 }
 
 void MountPointStorage::GenerateId(std::wstring& id)
@@ -108,10 +109,10 @@ void MountPointStorage::GenerateId(std::wstring& id)
   delete[] out;
 }
 
-void MountPointStorage::Encrypt(std::wstring& in, std::vector<BYTE>& out)
+void MountPointStorage::Encrypt(const std::wstring& in, std::vector<BYTE>& out)
 {
   out.clear();
-  for (std::wstring::size_t i = 0; i < in.size(); i++)
+  for (std::wstring::size_type i = 0; i < in.size(); i++)
   {
      wchar_t symbol = in[i];
      BYTE wideSymbol[sizeof(wchar_t) / sizeof(BYTE)];
@@ -125,22 +126,21 @@ void MountPointStorage::Encrypt(std::wstring& in, std::vector<BYTE>& out)
   }
 }
 
-void MountPointStorage::Decrypt(std::vector<BYTE>& in, std::wstring& out)
+void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out)
 {
   out.clear();
-  int i = 0;
+  unsigned int i = 0;
   wchar_t symbol = 0;
   for (const auto& byte : in)
   {
     if (i < sizeof(wchar_t) / sizeof(BYTE) - 1)
       {
-        symbol = symbol << 8;
-        symbol += byte;
+        symbol += byte << (8 * i);
         i++;
       }
       else
       {
-        out.append(symbol);
+        out.push_back(symbol);
         i = 0;
         symbol = byte;
       }
@@ -165,8 +165,8 @@ bool MountPointStorage::Load(MountPoint& point) const
   return ret;
 }
 
-bool MountPointStorage::SetRegKey(HKEY folder, std::wstring& field,
-                                  std::vector<BYTE>& value) const;
+bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
+                                  const std::vector<BYTE>& value) const
 {
   if (!folder || field.empty()) return false;
   LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_BINARY,
@@ -174,17 +174,18 @@ bool MountPointStorage::SetRegKey(HKEY folder, std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::SetRegKey(HKEY folder, std::wstring& field,
-                                  std::wstring& value) const
+bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
+                                  const std::wstring& value) const
 {
   if (!folder || field.empty()) return false;
   std::string buf = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(value);
   LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_SZ_MB,
-                                    buf.c_str(), buf.size() + 1);
+                                    (const BYTE*)buf.c_str(), buf.size() + 1);
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::SetRegKey(HKEY folder, std::wstring& field, DWORD value) const
+bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
+                                  const DWORD value) const
 {
   if (!folder || field.empty()) return false;
   LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_DWORD,
@@ -192,11 +193,11 @@ bool MountPointStorage::SetRegKey(HKEY folder, std::wstring& field, DWORD value)
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::GetRegKey(HKEY folder, std::wstring& field,
+bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
                                   std::vector<BYTE>& value) const
 {
   value.clear();
-  if (!folder || field.empty() || !valueSize) return false;
+  if (!folder || field.empty()) return false;
   BYTE* buf = new BYTE[MAX_PATH];
 	DWORD Type,
         sz = MAX_PATH;
@@ -221,7 +222,7 @@ bool MountPointStorage::GetRegKey(HKEY folder, std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::GetRegKey(HKEY folder, std::wstring& field,
+bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
                                   std::wstring& value) const
 {
   value.clear();
@@ -250,10 +251,12 @@ bool MountPointStorage::GetRegKey(HKEY folder, std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::GetRegKey(HKEY folder, std::wstring& field, DWORD& value) const
+bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
+                                  DWORD& value) const
 {
   if (!folder || field.empty()) return false;
   DWORD Type, size = sizeof(DWORD);
-  LONG res = WINPORT(RegQueryValueEx)(folder, field.c_str(), 0, &Type, (BYTE*)&value, &Size)
+  LONG res = WINPORT(RegQueryValueEx)(folder, field.c_str(), 0, &Type,
+                                      (BYTE*)&value, &size);
   return res == ERROR_SUCCESS;
 }

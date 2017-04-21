@@ -19,13 +19,38 @@ MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, co
 {
 }
 
+MountPoint::MountPoint(const MountPoint& other)
+{
+    m_bMounted = other.m_bMounted;
+    m_type = other.m_type;
+    m_resPath = other.m_resPath;
+    m_user = other.m_user;
+    m_password = other.m_password;
+    m_mountPointPath = other.m_mountPointPath;
+    m_shareName = other.m_shareName;
+    m_storageId = other.m_storageId;
+}
+
+MountPoint& MountPoint::operator=(const MountPoint& other)
+{
+    m_bMounted = other.m_bMounted;
+    m_type = other.m_type;
+    m_resPath = other.m_resPath;
+    m_user = other.m_user;
+    m_password = other.m_password;
+    m_mountPointPath = other.m_mountPointPath;
+    m_shareName = other.m_shareName;
+    m_storageId = other.m_storageId;
+    return *this;
+}
+
 bool MountPoint::mount() throw(GvfsServiceException)
 {
     if (m_bMounted) return true;
 
-    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->m_resPath);
-    std::string userName = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->m_user);
-    std::string password = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->m_password);
+    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(this->m_resPath);
+    std::string userName = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(this->m_user);
+    std::string password = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(this->m_password);
 
     if (resPath.empty()) return false;
 
@@ -46,7 +71,7 @@ bool MountPoint::unmount() throw(GvfsServiceException)
 {
     if (!m_bMounted) return true;
 
-    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t>>().to_bytes(this->m_resPath);
+    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(this->m_resPath);
     if (resPath.empty()) return false;
 
     GvfsService service;

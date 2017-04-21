@@ -76,7 +76,17 @@ bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint)
     {
         return false;
     }
-    mountPoint.setResPath(reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0)));
+    std::wstring buf =  reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
+    if (buf.empty())
+    {
+        const wchar_t *msgItems[2];
+        msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
+        msgItems[1] = info.GetMsg(info.ModuleNumber, MResourcePathEmpty);
+        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, NULL,
+                     msgItems, 2, 0);
+        return false;
+    }
+    mountPoint.setResPath(buf.c_str());
     mountPoint.setUser(reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 4, 0)));
     mountPoint.setPassword(reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 6, 0)));
     return true;

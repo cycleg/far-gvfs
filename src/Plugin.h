@@ -8,9 +8,8 @@
 #include "KeyBarTitlesHelper.h"
 #include "MountPoint.h"
 
-class Options
+struct Options
 {
-public:
     bool AddToDisksMenu;
     bool AddToPluginsMenu;
     int CommonPanel;
@@ -31,8 +30,8 @@ public:
     wchar_t Prefix[16];
 };
 
-class Plugin {
-
+class Plugin
+{
 public:
     static Plugin& getInstance();
 
@@ -49,14 +48,14 @@ public:
     void getOpenPluginInfo(HANDLE Plugin, OpenPluginInfo * pluginInfo);
     int getFindData(HANDLE Plugin, PluginPanelItem ** PanelItem, int * itemsNumber, int OpMode);
     void freeFindData(HANDLE Plugin, PluginPanelItem * PanelItem, int itemsNumber);
-    int processHostFile(HANDLE Plugin, struct PluginPanelItem * PanelItem, int ItemsNumber, int OpMode);
+    int processHostFile(HANDLE Plugin, struct PluginPanelItem * PanelItem, int itemsNumber, int OpMode);
     int processKey(HANDLE Plugin, int key, unsigned int controlState);
     int processEvent(HANDLE Plugin, int Event, void * Param);
     int setDirectory(HANDLE Plugin, const wchar_t * Dir, int OpMode);
     int makeDirectory(HANDLE Plugin, const wchar_t ** Name, int OpMode);
     int deleteFiles(HANDLE Plugin, PluginPanelItem * PanelItem, int itemsNumber, int OpMode);
-    int getFiles(HANDLE Plugin, PluginPanelItem * PanelItem, int itemsNumber, int Move, const wchar_t ** destPath, int OpMode);
-    int putFiles(HANDLE Plugin, PluginPanelItem * PanelItem, int itemsNumber, int Move, const wchar_t * SrcPath, int OpMode);
+    int getFiles(HANDLE Plugin, PluginPanelItem * PanelItem, int itemsNumber, int Move, const wchar_t ** dstPath, int OpMode);
+    int putFiles(HANDLE Plugin, PluginPanelItem * PanelItem, int itemsNumber, int Move, const wchar_t * srcPath, int OpMode);
     int processEditorEvent(int Event, void * Param);
     int processEditorInput(const INPUT_RECORD * Rec);
 
@@ -67,6 +66,7 @@ private:
     Options Opt;
     KeyBarTitlesHelper m_keyBar;
     PluginStartupInfo m_pPsi;
+    std::wstring m_registryRoot;
     std::vector<PluginPanelItem> m_items;
     std::map<std::wstring, MountPoint> m_mountPoints;
 };

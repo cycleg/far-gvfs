@@ -3,8 +3,12 @@
 #include <string>
 #include "GvfsServiceException.h"
 
+class MountPointStorage;
+
 class MountPoint
 {
+  friend class MountPointStorage;
+
   public:
     enum class FileSystem {
         NoFs,
@@ -17,6 +21,9 @@ class MountPoint
 
     MountPoint();
     MountPoint(const std::wstring& resPath, const std::wstring& user, const std::wstring& password);
+    MountPoint(const MountPoint& other);
+
+    MountPoint& operator=(const MountPoint& other);
 
     inline bool isMounted() const { return m_bMounted; }
     inline FileSystem getFsType() const { return m_type; }
@@ -41,4 +48,5 @@ class MountPoint
     std::wstring m_password;
     std::wstring m_mountPointPath;
     std::wstring m_shareName;
+    std::wstring m_storageId;
 };

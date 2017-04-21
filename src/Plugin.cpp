@@ -1,9 +1,13 @@
 #include <iostream> // debug output
-#include <codecvt> // debug output
-#include <locale> // debug output
+#include <codecvt>
+#include <locale>
 #include "gvfsdlg.h"
 #include "LngStringIDs.h"
+#include "MountPointStorage.h"
 #include "Plugin.h"
+
+#define UNUSED(x) (void)x;
+#define MACRO_TEXT(s) TEXT(s)
 
 Plugin& Plugin::getInstance()
 {
@@ -15,8 +19,10 @@ Plugin::Plugin()
 {
     Opt.AddToDisksMenu = true;
     Opt.AddToPluginsMenu = true;
-//    m_keyBar.setNormalKey(7, L"MkMount");
-//    m_keyBar.setNormalKey(4, L"EdMount");
+#if 0
+    m_keyBar.setNormalKey(7, L"MkMount");
+    m_keyBar.setNormalKey(4, L"EdMount");
+#endif
 }
 
 Plugin::~Plugin()
@@ -31,7 +37,13 @@ int Plugin::getVersion()
 
 void Plugin::setStartupInfo(const PluginStartupInfo *psi)
 {
-    this->m_pPsi = *psi;
+    m_pPsi = *psi;
+    m_registryRoot.append(m_pPsi.RootKey);
+    m_registryRoot.append(WGOOD_SLASH);
+    m_registryRoot.append(MACRO_TEXT(PLUGIN_NAME));
+    // load mount points from registry
+    MountPointStorage storage(m_registryRoot);
+    storage.LoadAll(m_mountPoints);
 }
 
 void Plugin::exitFar()
@@ -57,7 +69,6 @@ void Plugin::exitFar()
 
 void Plugin::getPluginInfo(PluginInfo *info)
 {
-
     info->StructSize = sizeof(*info);
     info->Flags = PF_PRELOAD;
 
@@ -80,30 +91,40 @@ void Plugin::getPluginInfo(PluginInfo *info)
 
 int Plugin::configure(int item)
 {
-  (void)item;
-  return FALSE;
+    UNUSED(item)
+
+    return FALSE;
 }
 
 HANDLE Plugin::openPlugin(int openFrom, intptr_t item)
 {
+    UNUSED(openFrom)
+    UNUSED(item)
+
     return static_cast<HANDLE>(this);
 }
 
 void Plugin::closePlugin(HANDLE Plugin)
 {
-
+    UNUSED(Plugin)
 }
 
 void Plugin::getOpenPluginInfo(HANDLE Plugin, OpenPluginInfo *pluginInfo)
 {
-//    pluginInfo->KeyBar = &(m_keyBar.getKeyBar());
+    UNUSED(Plugin)
 
+#if 0
+    pluginInfo->KeyBar = &(m_keyBar.getKeyBar());
+#endif
     static const wchar_t *pluginPanelTitle = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MGvfsPanel);
     pluginInfo->PanelTitle = pluginPanelTitle;
 }
 
 int Plugin::getFindData(HANDLE Plugin, PluginPanelItem **PanelItem, int *itemsNumber, int OpMode)
 {
+    UNUSED(Plugin)
+    UNUSED(OpMode)
+
     updatePanelItems();
     *PanelItem = m_items.empty() ? nullptr : &(m_items[0]);
     *itemsNumber = m_items.size();
@@ -112,18 +133,23 @@ int Plugin::getFindData(HANDLE Plugin, PluginPanelItem **PanelItem, int *itemsNu
 
 void Plugin::freeFindData(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber)
 {
-
+    UNUSED(Plugin)
+    UNUSED(PanelItem)
+    UNUSED(itemsNumber)
 }
 
-int Plugin::processHostFile(HANDLE Plugin, PluginPanelItem *PanelItem, int ItemsNumber, int OpMode)
+int Plugin::processHostFile(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int OpMode)
 {
+    UNUSED(Plugin)
+    UNUSED(PanelItem)
+    UNUSED(itemsNumber)
+    UNUSED(OpMode)
+
     return 0;
 }
 
 int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
 {
-fprintf(stderr, "Gvfs processKey(): key = %d controlState = %d\n", key, controlState);
-fflush(stderr);
     if ((key == VK_F3) || (key == VK_F5) || (key == VK_F6))
     {
         // block keys
@@ -143,11 +169,14 @@ fflush(stderr);
         {
             if (GetLoginData(m_pPsi, it->second))
             {
+                MountPointStorage storage(m_registryRoot);
                 MountPoint changedMountPt = it->second;
                 m_mountPoints.erase(it);
                 m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
                     changedMountPt.getResPath(), changedMountPt
                 ));
+                // TODO: save error
+                storage.Save(changedMountPt);
                 m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
             }
         }
@@ -156,12 +185,15 @@ fflush(stderr);
     else if ((key == VK_F4) && (controlState & PKF_SHIFT))
     {
         // add new mount record
-        MountPoint mntPoint;
-        if (GetLoginData(m_pPsi, mntPoint))
+        MountPoint point(MountPointStorage::PointFactory());
+        if (GetLoginData(m_pPsi, point))
         {
+            MountPointStorage storage(m_registryRoot);
             m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
-                mntPoint.getResPath(), mntPoint
+                point.getResPath(), point
             ));
+            // TODO: save error
+            storage.Save(point);
             m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
         }
         return 1;
@@ -171,6 +203,10 @@ fflush(stderr);
 
 int Plugin::processEvent(HANDLE Plugin, int Event, void *Param)
 {
+    UNUSED(Plugin)
+    UNUSED(Event)
+    UNUSED(Param)
+
     return 0;
 }
 
@@ -217,23 +253,32 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t *Dir, int OpMode)
             }
         }
     }
-
     return 0;
 }
 
 int Plugin::makeDirectory(HANDLE Plugin, const wchar_t **Name, int OpMode)
 {
+    UNUSED(Plugin)
+    UNUSED(Name)
+    UNUSED(OpMode)
+
     // add new mount record
-    MountPoint mountPoint;
-    if(GetLoginData(this->m_pPsi, mountPoint))
+    MountPoint point(MountPointStorage::PointFactory());
+    if(GetLoginData(m_pPsi, point))
     {
-        m_mountPoints.insert(std::pair<std::wstring, MountPoint>(mountPoint.getResPath(), mountPoint));
+        MountPointStorage storage(m_registryRoot);
+        m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getResPath(), point));
+        // TODO: save error
+        storage.Save(point);
     }
     return 1;
 }
 
 int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int OpMode)
 {
+    UNUSED(Plugin)
+    UNUSED(OpMode)
+
     const unsigned N = 2;
     const wchar_t *msgItems[N] =
     {
@@ -254,6 +299,7 @@ int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumb
         auto it = m_mountPoints.find(name);
         if (it != m_mountPoints.end())
         {
+            MountPointStorage storage(m_registryRoot);
             if (it->second.isMounted())
                 try
                 {
@@ -279,29 +325,49 @@ int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumb
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
                                    NULL, msgItems, 2, 0);
                 }
+            storage.Delete(it->second);
             m_mountPoints.erase(it);
         }
     }
     return 0;
 }
 
-int Plugin::getFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int Move, const wchar_t **destPath, int OpMode)
+int Plugin::getFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int Move, const wchar_t **dstPath, int OpMode)
 {
+    UNUSED(Plugin)
+    UNUSED(PanelItem)
+    UNUSED(itemsNumber)
+    UNUSED(Move)
+    UNUSED(dstPath)
+    UNUSED(OpMode)
+
     return 0;
 }
 
-int Plugin::putFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int Move, const wchar_t *SrcPath, int OpMode)
+int Plugin::putFiles(HANDLE Plugin, PluginPanelItem *PanelItem, int itemsNumber, int Move, const wchar_t *srcPath, int OpMode)
 {
+    UNUSED(Plugin)
+    UNUSED(PanelItem)
+    UNUSED(itemsNumber)
+    UNUSED(Move)
+    UNUSED(srcPath)
+    UNUSED(OpMode)
+
     return 0;
 }
 
 int Plugin::processEditorEvent(int Event, void *Param)
 {
+    UNUSED(Event)
+    UNUSED(Param)
+
     return 0;
 }
 
 int Plugin::processEditorInput(const INPUT_RECORD *Rec)
 {
+    UNUSED(Rec)
+
     return 0;
 }
 

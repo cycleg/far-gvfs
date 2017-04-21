@@ -50,7 +50,7 @@ enum
   MNewPanelForSearchResults,
   MListFilePath,
 
-  MCopyContensMsg,
+  MResourcePathEmpty,
 
   MUser,
   MPassword,
