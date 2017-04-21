@@ -57,7 +57,7 @@ bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint)
           -1, mountPoint.getPassword().c_str(), 0 },
 
 
-        { DI_CHECKBOX, 5, 8, 0, 8, 0, 0, 0, 0,
+        { DI_CHECKBOX, 5, 8, 0, 8, 0, 0, DIF_DISABLE, 0,
           -1, L"Add this mount point to disk menu.", 0 },
 
         { DI_BUTTON, 0, 10, 0, 10, 0, 0, DIF_CENTERGROUP, 1,
