@@ -114,8 +114,15 @@ SHAREDSYMBOL int WINAPI ProcessEditorInputW(const INPUT_RECORD * Rec)
     return Plugin::getInstance().processEditorInput(Rec);
 }
 
-SHAREDSYMBOL HANDLE WINAPI OpenFilePluginW(const wchar_t * fileName, const uint8_t * fileHeader, int fileHeaderSize, int /*OpMode*/)
+SHAREDSYMBOL HANDLE WINAPI OpenFilePluginW(const wchar_t * fileName, const uint8_t * fileHeader, int fileHeaderSize, int OpMode)
 {
+    (void)fileName;
+    (void)fileHeader;
+    (void)fileHeaderSize;
+    (void)OpMode;
+
+    return INVALID_HANDLE_VALUE;
+#if 0
     if (fileName == nullptr)
     {
         return INVALID_HANDLE_VALUE;
@@ -134,11 +141,14 @@ SHAREDSYMBOL HANDLE WINAPI OpenFilePluginW(const wchar_t * fileName, const uint8
     }
     return Plugin::getInstance().openPlugin(OPEN_ANALYSE,
                                             reinterpret_cast<intptr_t>(fileName));
+#endif
 }
 
 __attribute__((constructor)) void so_init(void)
 {
-    //  FarPlugin = CreateFarPlugin(0);
+#if 0
+    FarPlugin = CreateFarPlugin(0);
+#endif
 }
 
 } // extern "C"

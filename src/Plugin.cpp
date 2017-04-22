@@ -7,6 +7,8 @@
 #include "Plugin.h"
 
 #define UNUSED(x) (void)x;
+
+// чтобы TEXT из WinCompat.h работал с макросом
 #define MACRO_TEXT(s) TEXT(s)
 
 Plugin& Plugin::getInstance()
