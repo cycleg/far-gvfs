@@ -48,10 +48,13 @@
 "Ne&w panel for search results"
 "Save file list as"
 
+"Mount point"
+"Resource path (smb://, scp://, webdav:// ...):"
 "Resource path empty!"
+"Password without user!"
 
-"User"
-"Password"
-"Mount Point Type"
+"User:"
+"Password:"
+"Resource type"
 "Mount error"
 "Unmount error"

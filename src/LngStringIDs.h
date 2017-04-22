@@ -50,11 +50,14 @@ enum
   MNewPanelForSearchResults,
   MListFilePath,
 
-  MResourcePathEmpty,
+  MResourceTitle,
+  MResourcePath,
+  MResourcePathEmptyError,
+  MPasswordWithoutUserError,
 
   MUser,
   MPassword,
-  MMountPointType,
+  MResourceType,
   MMountError,
   MUnmountError,
   __LAST_LNG_ENTRY__

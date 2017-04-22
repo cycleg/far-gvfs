@@ -40,19 +40,19 @@ bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint)
 
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
-          MConfigTitle, L"", 0 },
+          MResourceTitle, L"", 0 },
         { DI_TEXT, 5, 2, 0, 2, 0, 0, 0, 0,
-          -1, L"Resource path (smb://, scp://, webdav:// ...):" },
+          MResourcePath, L"", 0 },
         { DI_EDIT, 5, 3, DIALOG_WIDTH - 6, 3, 1, 0, 0, 0,
           -1, mountPoint.getResPath().c_str(), 0 },
 
         { DI_TEXT, 5, 4, 0, 4, 0, 0, 0, 0,
-          -1, L"Login:", 0 },
+          MUser, L"", 0 },
         { DI_EDIT, 5, 5, DIALOG_WIDTH - 6, 5, 1, 0, 0, 0,
           -1, mountPoint.getUser().c_str(), 0 },
 
         { DI_TEXT, 5, 6, 0, 6, 0, 0, 0, 0,
-          -1, L"Password:", 0 },
+          MPassword, L"", 0 },
         { DI_EDIT, 5, 7, DIALOG_WIDTH - 6, 7, 1, 0, 0, 0,
           -1, mountPoint.getPassword().c_str(), 0 },
 
@@ -76,18 +76,30 @@ bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint)
     {
         return false;
     }
-    std::wstring buf =  reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
-    if (buf.empty())
+    // check user input
+    std::wstring l_resPath =  reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
+    std::wstring l_user = reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 4, 0));
+    std::wstring l_password = reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 6, 0));
+    if (l_resPath.empty())
     {
         const wchar_t *msgItems[2];
         msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
-        msgItems[1] = info.GetMsg(info.ModuleNumber, MResourcePathEmpty);
+        msgItems[1] = info.GetMsg(info.ModuleNumber, MResourcePathEmptyError);
         info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, NULL,
                      msgItems, 2, 0);
         return false;
     }
-    mountPoint.setResPath(buf.c_str());
-    mountPoint.setUser(reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 4, 0)));
-    mountPoint.setPassword(reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 6, 0)));
+    if (l_user.empty() && !l_password.empty())
+    {
+        const wchar_t *msgItems[2];
+        msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
+        msgItems[1] = info.GetMsg(info.ModuleNumber, MPasswordWithoutUserError);
+        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, NULL,
+                     msgItems, 2, 0);
+        return false;
+    }
+    mountPoint.setResPath(l_resPath);
+    mountPoint.setUser(l_user);
+    mountPoint.setPassword(l_password);
     return true;
 }

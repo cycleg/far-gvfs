@@ -33,9 +33,9 @@ class MountPoint
     inline const std::wstring& getUser() const { return m_user; }
     inline const std::wstring& getPassword() const { return m_password; }
 
-    inline void setResPath(const wchar_t* s) { this->m_resPath = s; }
-    inline void setUser(const wchar_t* s) { this->m_user = s; }
-    inline void setPassword(const wchar_t* s) { this->m_password = s; }
+    inline void setResPath(const std::wstring& s) { this->m_resPath = s; }
+    inline void setUser(const std::wstring& s) { this->m_user = s; }
+    inline void setPassword(const std::wstring& s) { this->m_password = s; }
 
     bool mount() throw(GvfsServiceException);
     bool unmount() throw(GvfsServiceException);
