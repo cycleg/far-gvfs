@@ -72,14 +72,15 @@ bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint)
                                   dialogItems.size(), 0, 0, NULL, 0);
 
     int ret = info.DialogRun(hDlg);
+    std::wstring l_resPath =  reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
+    std::wstring l_user = reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 4, 0));
+    std::wstring l_password = reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 6, 0));
+    info.DialogFree(hDlg);
+    // check user input
     if ((ret == -1) || (ret == 9))
     {
         return false;
     }
-    // check user input
-    std::wstring l_resPath =  reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
-    std::wstring l_user = reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 4, 0));
-    std::wstring l_password = reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 6, 0));
     if (l_resPath.empty())
     {
         const wchar_t *msgItems[2];
