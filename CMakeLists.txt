@@ -23,8 +23,8 @@ set(SOURCES
 
 find_package(PkgConfig)
 
-pkg_check_modules(GTKMM gtkmm-3.0)
-pkg_check_modules(UUID uuid)
+pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
+pkg_check_modules(UUID REQUIRED uuid)
 
 add_library (${PROJECT_NAME} MODULE ${HEADERS} ${SOURCES})
 
