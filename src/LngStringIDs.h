@@ -52,12 +52,14 @@ enum
 
   MResourceTitle,
   MResourcePath,
-  MResourcePathEmptyError,
-  MPasswordWithoutUserError,
-
   MUser,
   MPassword,
   MResourceType,
+  MResourcePathEmptyError,
+  MPasswordWithoutUserError,
+
+  MResourceMount,
+  MPleaseWait,
   MMountError,
   MUnmountError,
   __LAST_LNG_ENTRY__

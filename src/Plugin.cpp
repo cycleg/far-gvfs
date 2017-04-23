@@ -220,10 +220,17 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t *Dir, int OpMode)
         if (it != m_mountPoints.end())
         {
             if (!it->second.isMounted())
+            {
+                bool isMount = false;
+                HANDLE hScreen = nullptr;
+                hScreen = m_pPsi.SaveScreen(0,0,-1,-1);
                 try
                 {
-                    if(!it->second.mount())
-                        return 0;
+                    const wchar_t *msgItems[2];
+                    msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceMount);
+                    msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
+                    m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems, 2, 0);
+                    isMount = it->second.mount();
                 }
                 catch (const GvfsServiceException& error)
                 {
@@ -234,7 +241,6 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t *Dir, int OpMode)
                     msgItems[1] = buf.c_str();
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
                                    NULL, msgItems, 2, 0);
-                    return 0;
                 }
                 catch (const Glib::Error& error)
                 {
@@ -245,8 +251,10 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t *Dir, int OpMode)
                     msgItems[1] = buf.c_str();
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
                                    NULL, msgItems, 2, 0);
-                    return 0;
                 }
+                m_pPsi.RestoreScreen(hScreen);
+                if (!isMount) return 0;
+            }
             // change directory to:
             std::wstring dir = it->second.getFsPath();
             if (!dir.empty())

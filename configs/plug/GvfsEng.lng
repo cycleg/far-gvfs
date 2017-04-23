@@ -50,11 +50,13 @@
 
 "Mount point"
 "Resource path (smb://, scp://, webdav:// ...):"
-"Resource path empty!"
-"Password without user!"
-
 "User:"
 "Password:"
 "Resource type"
+"Resource path empty!"
+"Password without user!"
+
+"Resource mount"
+"Please, wait..."
 "Mount error"
 "Unmount error"
