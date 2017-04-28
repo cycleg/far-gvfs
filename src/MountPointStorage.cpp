@@ -8,12 +8,42 @@
 #define UUID_TEXT_SIZE (sizeof(uuid_t) * 2 + 5)
 
 const wchar_t* MountPointStorage::StoragePath = L"Resources";
+const wchar_t* MountPointStorage::StorageVersionKey = L"Version";
+const DWORD MountPointStorage::StorageVersion = 1;
 
 MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
-  m_registryFolder(registryFolder)
+  m_registryFolder(registryFolder),
+  m_version(0)
 {
   m_registryFolder.append(WGOOD_SLASH);
   m_registryFolder.append(StoragePath);
+  std::wstring key = m_registryFolder;
+	HKEY hKey = nullptr;
+  LONG res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(),
+                                   0, KEY_READ | KEY_WRITE, &hKey);
+  if (res != ERROR_SUCCESS)
+    {
+      // new storage?
+      DWORD disposition;
+      res = WINPORT(RegCreateKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(),
+                                    0, nullptr, 0, KEY_WRITE, nullptr, &hKey,
+                                    &disposition);
+      WINPORT(SetLastError)(res);
+    }
+    else
+    {
+      if (!GetValue(hKey, StorageVersionKey, m_version)) m_version = 0;
+    }
+  if (res == ERROR_SUCCESS)
+  {
+    if (!m_version)
+    {
+      // try to set storage version
+      m_version = StorageVersion;
+      SetValue(hKey, StorageVersionKey, StorageVersion);
+    }
+    WINPORT(RegCloseKey)(hKey);
+  }
 }
 
 MountPoint MountPointStorage::PointFactory()
@@ -25,6 +55,8 @@ MountPoint MountPointStorage::PointFactory()
 
 void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) const
 {
+  // не удалось создать хранилище на диске
+  if (!valid()) return;
 	HKEY hKey = nullptr;
 	LONG res;
   DWORD index = 0;
@@ -32,7 +64,7 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
   if (WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(), 0,
                             KEY_ENUMERATE_SUB_KEYS | KEY_READ, &hKey) != ERROR_SUCCESS)
   {
-    // no storage
+    // хранилище не доступно
 		return;
 	}
   do
@@ -60,6 +92,8 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
 
 bool MountPointStorage::Save(const MountPoint& point) const
 {
+  // не удалось создать хранилище на диске
+  if (!valid()) return false;
 	HKEY hKey = nullptr;
   LONG res;
   std::wstring key = m_registryFolder;
@@ -78,15 +112,17 @@ bool MountPointStorage::Save(const MountPoint& point) const
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
   Encrypt(point.m_password, l_password);
-  bool ret = SetRegKey(hKey, L"Path", point.m_resPath) &&
-             SetRegKey(hKey, L"User", point.m_user)  &&
-             SetRegKey(hKey, L"Password", l_password);
+  bool ret = SetValue(hKey, L"Path", point.m_resPath) &&
+             SetValue(hKey, L"User", point.m_user)  &&
+             SetValue(hKey, L"Password", l_password);
   WINPORT(RegCloseKey)(hKey);
   return ret;
 }
 
 void MountPointStorage::Delete(const MountPoint& point) const
 {
+  // no valid storage - nothing to delete
+  if (!valid()) return;
 	HKEY hKey = nullptr;
   std::wstring key = m_registryFolder;
   key.append(WGOOD_SLASH);
@@ -150,6 +186,8 @@ void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out)
 
 bool MountPointStorage::Load(MountPoint& point) const
 {
+  // не удалось создать хранилище на диске
+  if (!m_version) return false;
 	HKEY hKey = nullptr;
 	LONG res;
   std::wstring key = m_registryFolder;
@@ -158,15 +196,15 @@ bool MountPointStorage::Load(MountPoint& point) const
   res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, key.c_str(), 0, KEY_READ, &hKey);
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
-  bool ret = GetRegKey(hKey, L"Path", point.m_resPath) &&
-             GetRegKey(hKey, L"User", point.m_user)  &&
-             GetRegKey(hKey, L"Password", l_password);
+  bool ret = GetValue(hKey, L"Path", point.m_resPath) &&
+             GetValue(hKey, L"User", point.m_user)  &&
+             GetValue(hKey, L"Password", l_password);
   WINPORT(RegCloseKey)(hKey);
   if (ret) Decrypt(l_password, point.m_password);
   return ret;
 }
 
-bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
+bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
                                   const std::vector<BYTE>& value) const
 {
   if (!folder || field.empty()) return false;
@@ -175,7 +213,7 @@ bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
+bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
                                   const std::wstring& value) const
 {
   if (!folder || field.empty()) return false;
@@ -185,7 +223,7 @@ bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
+bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
                                   const DWORD value) const
 {
   if (!folder || field.empty()) return false;
@@ -194,7 +232,7 @@ bool MountPointStorage::SetRegKey(HKEY folder, const std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
+bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
                                   std::vector<BYTE>& value) const
 {
   value.clear();
@@ -223,7 +261,7 @@ bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
+bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
                                   std::wstring& value) const
 {
   value.clear();
@@ -252,7 +290,7 @@ bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
   return res == ERROR_SUCCESS;
 }
 
-bool MountPointStorage::GetRegKey(HKEY folder, const std::wstring& field,
+bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
                                   DWORD& value) const
 {
   if (!folder || field.empty()) return false;

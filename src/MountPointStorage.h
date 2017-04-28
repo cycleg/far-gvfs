@@ -13,12 +13,16 @@ class MountPointStorage
 
     static MountPoint PointFactory();
 
+    inline bool valid() const { return m_version != 0; }
+
     void LoadAll(std::map<std::wstring, MountPoint>& storage) const;
     bool Save(const MountPoint& point) const;
     void Delete(const MountPoint& point) const;
 
   private:
     static const wchar_t* StoragePath;
+    static const wchar_t* StorageVersionKey;
+    static const DWORD StorageVersion;
 
     static void GenerateId(std::wstring& id);
     static void Encrypt(const std::wstring& in, std::vector<BYTE>& out);
@@ -26,18 +30,19 @@ class MountPointStorage
 
     bool Load(MountPoint& point) const;
 
-    bool SetRegKey(HKEY folder, const std::wstring& field,
+    bool SetValue(HKEY folder, const std::wstring& field,
                    const std::vector<BYTE>& value) const;
-    bool SetRegKey(HKEY folder, const std::wstring& field,
+    bool SetValue(HKEY folder, const std::wstring& field,
                    const std::wstring& value) const;
-    bool SetRegKey(HKEY folder, const std::wstring& field,
+    bool SetValue(HKEY folder, const std::wstring& field,
                    const DWORD value) const;
-    bool GetRegKey(HKEY folder, const std::wstring& field,
+    bool GetValue(HKEY folder, const std::wstring& field,
                    std::vector<BYTE>& value) const;
-    bool GetRegKey(HKEY folder, const std::wstring& field,
+    bool GetValue(HKEY folder, const std::wstring& field,
                    std::wstring& value) const;
-    bool GetRegKey(HKEY folder, const std::wstring& field,
+    bool GetValue(HKEY folder, const std::wstring& field,
                    DWORD& value) const;
 
     std::wstring m_registryFolder;
+    DWORD m_version;
 };
