@@ -40,7 +40,7 @@ MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
     {
       // try to set storage version
       m_version = StorageVersion;
-      SetValue(hKey, StorageVersionKey, StorageVersion);
+      SetValue(hKey, StorageVersionKey, m_version);
     }
     WINPORT(RegCloseKey)(hKey);
   }
@@ -80,6 +80,7 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
     {
       MountPoint point;
       point.m_storageId = subKey;
+      // load always update record to current storage version
       // TODO: load error
       if (Load(point))
           storage.insert(std::pair<std::wstring, MountPoint>(point.getResPath(),
@@ -88,6 +89,28 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
     index++;
   } while (res == ERROR_SUCCESS);
   WINPORT(RegCloseKey)(hKey);
+  if (m_version < StorageVersion)
+  {
+    // storage update
+    for (const auto& mountPt : storage)
+    {
+      Delete(mountPt.second);
+      // TODO: save error
+      Save(mountPt.second);
+    }
+    m_version = StorageVersion;
+    res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(),
+                                0, KEY_WRITE, &hKey);
+    if (res == ERROR_SUCCESS)
+      {
+        SetValue(hKey, StorageVersionKey, StorageVersion);
+      }
+      else
+      {
+        // TODO: save error
+      }
+    WINPORT(RegCloseKey)(hKey);
+  }
 }
 
 bool MountPointStorage::Save(const MountPoint& point) const
@@ -112,6 +135,7 @@ bool MountPointStorage::Save(const MountPoint& point) const
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
   Encrypt(point.m_password, l_password);
+  // save always in current storage version
   bool ret = SetValue(hKey, L"Path", point.m_resPath) &&
              SetValue(hKey, L"User", point.m_user)  &&
              SetValue(hKey, L"Password", l_password);
@@ -196,11 +220,20 @@ bool MountPointStorage::Load(MountPoint& point) const
   res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, key.c_str(), 0, KEY_READ, &hKey);
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
-  bool ret = GetValue(hKey, L"Path", point.m_resPath) &&
-             GetValue(hKey, L"User", point.m_user)  &&
-             GetValue(hKey, L"Password", l_password);
+  bool ret = true;
+  switch (m_version)
+  {
+    case 1:
+      ret = GetValue(hKey, L"Path", point.m_resPath) &&
+            GetValue(hKey, L"User", point.m_user)  &&
+            GetValue(hKey, L"Password", l_password);
+      if (ret) Decrypt(l_password, point.m_password);
+      break;
+    default:
+      break;
+  }
   WINPORT(RegCloseKey)(hKey);
-  if (ret) Decrypt(l_password, point.m_password);
+  // TODO: update to current storage version
   return ret;
 }
 
