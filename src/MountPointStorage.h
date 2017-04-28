@@ -26,7 +26,7 @@ class MountPointStorage
 
     static void GenerateId(std::wstring& id);
     static void Encrypt(const std::wstring& in, std::vector<BYTE>& out);
-    static void Decrypt(const std::vector<BYTE>& in, std::wstring& out);
+    void Decrypt(const std::vector<BYTE>& in, std::wstring& out) const;
 
     bool Load(MountPoint& point) const;
 

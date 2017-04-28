@@ -80,7 +80,7 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
     {
       MountPoint point;
       point.m_storageId = subKey;
-      // load always update record to current storage version
+      // load always converse record to current storage version
       // TODO: load error
       if (Load(point))
           storage.insert(std::pair<std::wstring, MountPoint>(point.getResPath(),
@@ -91,7 +91,7 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
   WINPORT(RegCloseKey)(hKey);
   if (m_version < StorageVersion)
   {
-    // storage update
+    // storage conversion
     for (const auto& mountPt : storage)
     {
       Delete(mountPt.second);
@@ -187,24 +187,33 @@ void MountPointStorage::Encrypt(const std::wstring& in, std::vector<BYTE>& out)
   }
 }
 
-void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out)
+void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) const
 {
   out.clear();
-  unsigned int i = 0;
-  wchar_t symbol = 0;
-  for (const auto& byte : in)
+  switch (m_version)
   {
-    if (i < sizeof(wchar_t) / sizeof(BYTE) - 1)
+    case 1:
       {
-        symbol += byte << (8 * i);
-        i++;
+        unsigned int i = 0;
+        wchar_t symbol = 0;
+        for (const auto& byte : in)
+        {
+          if (i < sizeof(wchar_t) / sizeof(BYTE) - 1)
+            {
+              symbol += byte << (8 * i);
+              i++;
+            }
+            else
+            {
+              out.push_back(symbol);
+              i = 0;
+              symbol = byte;
+            }
+        }
       }
-      else
-      {
-        out.push_back(symbol);
-        i = 0;
-        symbol = byte;
-      }
+      break;
+    default:
+      break;
   }
 }
 
@@ -233,7 +242,7 @@ bool MountPointStorage::Load(MountPoint& point) const
       break;
   }
   WINPORT(RegCloseKey)(hKey);
-  // TODO: update to current storage version
+  // TODO: converse to current storage version
   return ret;
 }
 
