@@ -186,6 +186,15 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         auto it = m_mountPoints.find(name);
         if (it != m_mountPoints.end())
         {
+            if (it->second.isMounted())
+            {
+                const wchar_t* msgItems[2] = { NULL };
+                msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+                msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MFirstUnmountResource);
+                m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                               NULL, msgItems, 2, 0);
+                return 1;
+            }
             if (GetLoginData(m_pPsi, it->second))
             {
                 MountPointStorage storage(m_registryRoot);
@@ -303,7 +312,7 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
     UNUSED(Name)
     UNUSED(OpMode)
 
-    // add new mount record
+    // add new resource
     MountPoint point(MountPointStorage::PointFactory());
     if(GetLoginData(m_pPsi, point))
     {

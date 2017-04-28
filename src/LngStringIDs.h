@@ -57,6 +57,7 @@ enum
   MResourceType,
   MResourcePathEmptyError,
   MPasswordWithoutUserError,
+  MFirstUnmountResource,
 
   MResourceMount,
   MPleaseWait,

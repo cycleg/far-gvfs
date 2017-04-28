@@ -55,6 +55,7 @@
 "Resource type"
 "Resource path empty!"
 "Password without user!"
+"First unmount the resource."
 
 "Resource mount"
 "Please, wait..."
