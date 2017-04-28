@@ -16,10 +16,12 @@ public:
     bool mount(const std::string& resPath, const std::string &userName,
                const std::string &password) throw(GvfsServiceException, Glib::Error);
     bool umount(const std::string& resPath) throw(GvfsServiceException, Glib::Error);
+    bool mounted(const std::string& resPath);
 
 private:
     void mount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
     bool unmount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
+    Glib::RefPtr<Gio::Mount> find_mount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
 
     int m_mountCount;
     std::string m_mountName;

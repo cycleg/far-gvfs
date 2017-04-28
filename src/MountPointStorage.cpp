@@ -50,7 +50,8 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
       point.m_storageId = subKey;
       // TODO: load error
       if (Load(point))
-        storage.insert(std::pair<std::wstring, MountPoint>(point.getResPath(), point));
+          storage.insert(std::pair<std::wstring, MountPoint>(point.getResPath(),
+                         point));
     }
     index++;
   } while (res == ERROR_SUCCESS);

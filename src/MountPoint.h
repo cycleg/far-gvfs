@@ -39,6 +39,7 @@ class MountPoint
 
     bool mount() throw(GvfsServiceException);
     bool unmount() throw(GvfsServiceException);
+    void mountCheck();
 
   private:
     bool m_bMounted;

@@ -84,3 +84,21 @@ bool MountPoint::unmount() throw(GvfsServiceException)
     }
     return success;
 }
+
+void MountPoint::mountCheck()
+{
+    if (m_bMounted) return;
+
+    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(this->m_resPath);
+    if (resPath.empty()) return;
+
+    GvfsService service;
+    if (service.mounted(resPath))
+    {
+        m_bMounted = true;
+        m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                      .from_bytes(service.getMountName());
+        m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                           .from_bytes(service.getMountPath());
+    }
+}
