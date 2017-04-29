@@ -17,7 +17,8 @@ Plugin& Plugin::getInstance()
     return instance;
 }
 
-Plugin::Plugin()
+Plugin::Plugin():
+  m_firstDemand(false)
 {
     Opt.AddToDisksMenu = true;
     Opt.AddToPluginsMenu = true;
@@ -46,10 +47,6 @@ void Plugin::setStartupInfo(const PluginStartupInfo* psi)
     // load mount points from registry
     MountPointStorage storage(m_registryRoot);
     storage.LoadAll(m_mountPoints);
-    for (auto& mntPoint : m_mountPoints)
-    {
-        mntPoint.second.mountCheck();
-    }
 }
 
 void Plugin::exitFar()
@@ -146,8 +143,17 @@ int Plugin::getFindData(HANDLE Plugin, PluginPanelItem** PanelItem, int* itemsNu
     UNUSED(Plugin)
     UNUSED(OpMode)
 
+    if (m_firstDemand)
+    {
+      m_firstDemand = false;
+      // get resources status
+      for (auto& mountPoint : m_mountPoints)
+      {
+          mountPoint.second.mountCheck();
+      }
+    }
     updatePanelItems();
-    *PanelItem = m_items.empty() ? nullptr : &m_items[0];
+    *PanelItem = m_items.empty() ? nullptr : m_items.data();
     *itemsNumber = m_items.size();
     return 1;
 }
@@ -181,7 +187,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
     {
         // edit resource
         std::wstring name;
-        getCurrentItemFilename(Plugin, name);
+        getPanelCurrentItemResource(Plugin, name);
         if (name.empty()) return 1; // no items, drop key
         auto it = m_mountPoints.find(name);
         if (it != m_mountPoints.end())
@@ -192,10 +198,10 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
                 msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
                 msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MFirstUnmountResource);
                 m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                               NULL, msgItems, 2, 0);
+                               NULL, msgItems, ARRAYSIZE(msgItems), 0);
                 return 1;
             }
-            if (GetLoginData(m_pPsi, it->second))
+            if (EditResourceDlg(m_pPsi, it->second))
             {
                 MountPointStorage storage(m_registryRoot);
                 MountPoint changedMountPt = it->second;
@@ -210,11 +216,11 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         }
         return 1; // return 1: far should not handle this key
     }
-    else if ((key == VK_F4) && (controlState & PKF_SHIFT))
+    else if ((controlState & PKF_SHIFT) && (key == VK_F4))
     {
         // add new resource
         MountPoint point(MountPointStorage::PointFactory());
-        if (GetLoginData(m_pPsi, point))
+        if (EditResourceDlg(m_pPsi, point))
         {
             MountPointStorage storage(m_registryRoot);
             m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
@@ -226,11 +232,11 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         }
         return 1;
     }
-    else if ((key == VK_F8) && (controlState & PKF_SHIFT))
+    else if ((controlState & PKF_SHIFT) && (key == VK_F8))
     {
         // unmount selected resource
         std::wstring name;
-        getCurrentItemFilename(Plugin, name);
+        getPanelCurrentItemResource(Plugin, name);
         if (name.empty()) return 1; // no items, drop key
         auto it = m_mountPoints.find(name);
         if ((it != m_mountPoints.end()) && it->second.isMounted())
@@ -240,6 +246,18 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
             // redraw screen
             m_pPsi.AdvControl(m_pPsi.ModuleNumber, ACTL_REDRAWALL, NULL);
         }
+        return 1;
+    }
+    else if ((controlState & PKF_CONTROL) && (key == 'R'))
+    {
+        // refresh resources status
+        for (auto& mountPoint : m_mountPoints)
+        {
+            mountPoint.second.mountCheck();
+        }
+        m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
+        // redraw screen
+        m_pPsi.AdvControl(m_pPsi.ModuleNumber, ACTL_REDRAWALL, NULL);
         return 1;
     }
     return 0; // all other keys left to far
@@ -266,12 +284,17 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                 const wchar_t* msgItems[2] = { NULL };
                 bool isMount = false;
                 HANDLE hScreen = nullptr;
+                if (it->second.getAskPassword())
+                {
+                  if (!AskPasswordDlg(m_pPsi, it->second)) return 0;
+                }
                 hScreen = m_pPsi.SaveScreen(0,0,-1,-1);
                 try
                 {
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceMount);
                     msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
-                    m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems, 2, 0);
+                    m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems,
+                                   ARRAYSIZE(msgItems), 0);
                     // для сообщения об ошибке
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MMountError);
                     isMount = it->second.mount();
@@ -282,7 +305,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                         std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
                     msgItems[1] = buf.c_str();
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                                   NULL, msgItems, 2, 0);
+                                   NULL, msgItems, ARRAYSIZE(msgItems), 0);
                 }
                 catch (const Glib::Error& error)
                 {
@@ -290,7 +313,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                         std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
                     msgItems[1] = buf.c_str();
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                                   NULL, msgItems, 2, 0);
+                                   NULL, msgItems, ARRAYSIZE(msgItems), 0);
                 }
                 m_pPsi.RestoreScreen(hScreen);
                 if (!isMount) return 0;
@@ -314,7 +337,7 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
 
     // add new resource
     MountPoint point(MountPointStorage::PointFactory());
-    if(GetLoginData(m_pPsi, point))
+    if (EditResourceDlg(m_pPsi, point))
     {
         MountPointStorage storage(m_registryRoot);
         m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getResPath(), point));
@@ -329,14 +352,14 @@ int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem* PanelItem, int itemsNumb
     UNUSED(Plugin)
     UNUSED(OpMode)
 
-    const unsigned N = 2;
-    const wchar_t* msgItems[N] =
+    const wchar_t* msgItems[2] =
     {
         L"Delete selected mounts",
         L"Do you really want to delete mount point?"
     };
 
-    auto msgCode = m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_YESNO, NULL, msgItems, N, 0);
+    auto msgCode = m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_YESNO,
+                                  NULL, msgItems, ARRAYSIZE(msgItems), 0);
     // if no or canceled msg box, do nothing
     if ((msgCode == -1) || (msgCode == 1))
     {
@@ -417,17 +440,17 @@ void Plugin::clearPanelItems()
 void Plugin::updatePanelItems()
 {
     clearPanelItems();
-    for (const auto& mountPt : m_mountPoints)
+    for (const auto& mountPoint : m_mountPoints)
     {
         PluginPanelItem item;
         memset(&item, 0, sizeof(item));
-        item.FindData.lpwszFileName = wcsdup(mountPt.second.getResPath().c_str());
+        item.FindData.lpwszFileName = wcsdup(mountPoint.second.getResPath().c_str());
         item.FindData.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
         item.CustomColumnNumber = 3;
         wchar_t** data = new wchar_t*[3];
-        data[0] = wcsdup(mountPt.second.isMounted() ? TEXT("*") : TEXT(" ")); //C0
-        data[1] = wcsdup(mountPt.second.getResPath().c_str()); //C1
-        data[2] = wcsdup(mountPt.second.getUser().c_str()); //C2
+        data[0] = wcsdup(mountPoint.second.isMounted() ? TEXT("*") : TEXT(" ")); //C0
+        data[1] = wcsdup(mountPoint.second.getResPath().c_str()); //C1
+        data[2] = wcsdup(mountPoint.second.getUser().c_str()); //C2
         item.CustomColumnData = data;
         m_items.push_back(item);
     }
@@ -447,18 +470,18 @@ void Plugin::unmountResource(MountPoint& point)
             std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
         msgItems[1] = buf.c_str();
         m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                       NULL, msgItems, 2, 0);
+                       NULL, msgItems, ARRAYSIZE(msgItems), 0);
     }
     catch (const Glib::Error& error)
     {
         std::wstring buf =
             std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
         m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                       NULL, msgItems, 2, 0);
+                       NULL, msgItems, ARRAYSIZE(msgItems), 0);
     }
 }
 
-void Plugin::getCurrentItemFilename(HANDLE Plugin, std::wstring& name)
+void Plugin::getPanelCurrentItemResource(HANDLE Plugin, std::wstring& name)
 {
     name.clear();
     struct PanelInfo pInfo;
@@ -470,7 +493,7 @@ void Plugin::getCurrentItemFilename(HANDLE Plugin, std::wstring& name)
     if (PPI)
     {
       m_pPsi.Control(Plugin, FCTL_GETPANELITEM, pInfo.CurrentItem, (LONG_PTR)PPI);
-      name = PPI->FindData.lpwszFileName;
+      name = PPI->CustomColumnData[1];
       free(PPI);
     }
 }

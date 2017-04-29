@@ -55,8 +55,10 @@ enum
   MUser,
   MPassword,
   MResourceType,
+  MAskPasswordEveryTime,
   MResourcePathEmptyError,
   MPasswordWithoutUserError,
+  MAnonymousConnectionPassword,
   MFirstUnmountResource,
 
   MResourceMount,

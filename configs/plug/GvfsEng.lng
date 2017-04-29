@@ -53,8 +53,10 @@
 "User"
 "Password"
 "Resource type"
+"Ask for password every time"
 "Resource path empty!"
 "Password without user!"
+"Anonymous mount does not need password."
 "First unmount the resource."
 
 "Resource mount"

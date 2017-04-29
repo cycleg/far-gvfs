@@ -63,7 +63,7 @@ private:
     void clearPanelItems();
     void updatePanelItems();
     void unmountResource(MountPoint& point);
-    void getCurrentItemFilename(HANDLE Plugin, std::wstring& name);
+    void getPanelCurrentItemResource(HANDLE Plugin, std::wstring& name);
 
     Options Opt;
     KeyBarTitlesHelper m_keyBar;
@@ -71,4 +71,5 @@ private:
     std::wstring m_registryRoot;
     std::vector<PluginPanelItem> m_items;
     std::map<std::wstring, MountPoint> m_mountPoints;
+    bool m_firstDemand; //< first demand to panel flag
 };

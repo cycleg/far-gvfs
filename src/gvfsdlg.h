@@ -13,7 +13,11 @@ struct InitDialogItem
     int X2;
     int Y2;
     int Focus;
-    DWORD_PTR Selected;
+    union
+    {
+        DWORD_PTR Reserved;
+        int Selected;
+    };
     unsigned int Flags;
     int DefaultButton;
     int lngIdx;
@@ -21,4 +25,5 @@ struct InitDialogItem
     int maxLen;
 };
 
-bool GetLoginData(PluginStartupInfo &info, MountPoint& mountPoint);
+bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint);
+bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint);
