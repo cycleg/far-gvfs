@@ -15,8 +15,8 @@ class MountPointStorage
 
     inline bool valid() const { return m_version != 0; }
 
-    void LoadAll(std::map<std::wstring, MountPoint>& storage) const;
-    bool Save(const MountPoint& point) const;
+    void LoadAll(std::map<std::wstring, MountPoint>& storage);
+    bool Save(const MountPoint& point);
     void Delete(const MountPoint& point) const;
 
   private:

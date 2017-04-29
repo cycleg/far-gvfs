@@ -19,6 +19,7 @@ MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
   m_registryFolder.append(StoragePath);
   std::wstring key = m_registryFolder;
 	HKEY hKey = nullptr;
+  bool newStorage = false;
   LONG res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(),
                                    0, KEY_READ | KEY_WRITE, &hKey);
   if (res != ERROR_SUCCESS)
@@ -29,6 +30,7 @@ MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
                                     0, nullptr, 0, KEY_WRITE, nullptr, &hKey,
                                     &disposition);
       WINPORT(SetLastError)(res);
+      newStorage = true;
     }
     else
     {
@@ -38,8 +40,9 @@ MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
   {
     if (!m_version)
     {
-      // try to set storage version
-      m_version = StorageVersion;
+      // set storage version: no version in existing storage - storage v1,
+      // else - new storage
+      m_version = newStorage ? StorageVersion : 1;
       SetValue(hKey, StorageVersionKey, m_version);
     }
     WINPORT(RegCloseKey)(hKey);
@@ -53,7 +56,7 @@ MountPoint MountPointStorage::PointFactory()
   return point;
 }
 
-void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) const
+void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage)
 {
   // не удалось создать хранилище на диске
   if (!valid()) return;
@@ -92,33 +95,40 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage) con
   if (m_version < StorageVersion)
   {
     // storage conversion
+    // чтобы не попасть в бесконечную рекурсию в Save()
+    m_version = StorageVersion;
     for (const auto& mountPt : storage)
     {
       Delete(mountPt.second);
       // TODO: save error
       Save(mountPt.second);
     }
-    m_version = StorageVersion;
     res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(),
-                                0, KEY_WRITE, &hKey);
+                                     0, KEY_WRITE, &hKey);
     if (res == ERROR_SUCCESS)
       {
-        SetValue(hKey, StorageVersionKey, StorageVersion);
+        SetValue(hKey, StorageVersionKey, m_version);
+        WINPORT(RegCloseKey)(hKey);
       }
       else
       {
         // TODO: save error
       }
-    WINPORT(RegCloseKey)(hKey);
   }
 }
 
-bool MountPointStorage::Save(const MountPoint& point) const
+bool MountPointStorage::Save(const MountPoint& point)
 {
   // не удалось создать хранилище на диске
   if (!valid()) return false;
 	HKEY hKey = nullptr;
   LONG res;
+  if (m_version < StorageVersion)
+  {
+    // LoadAll() не вызывали, придется конвертировать хранилище здесь
+    std::map<std::wstring, MountPoint> buffer;
+    LoadAll(buffer);
+  }
   std::wstring key = m_registryFolder;
   key.append(WGOOD_SLASH);
   key.append(point.m_storageId);
