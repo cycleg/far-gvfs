@@ -18,7 +18,7 @@ Plugin& Plugin::getInstance()
 }
 
 Plugin::Plugin():
-  m_firstDemand(false)
+  m_firstDemand(true)
 {
     Opt.AddToDisksMenu = true;
     Opt.AddToPluginsMenu = true;
@@ -146,11 +146,7 @@ int Plugin::getFindData(HANDLE Plugin, PluginPanelItem** PanelItem, int* itemsNu
     if (m_firstDemand)
     {
       m_firstDemand = false;
-      // get resources status
-      for (auto& mountPoint : m_mountPoints)
-      {
-          mountPoint.second.mountCheck();
-      }
+      checkResourcesStatus();
     }
     updatePanelItems();
     *PanelItem = m_items.empty() ? nullptr : m_items.data();
@@ -251,10 +247,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
     else if ((controlState & PKF_CONTROL) && (key == 'R'))
     {
         // refresh resources status
-        for (auto& mountPoint : m_mountPoints)
-        {
-            mountPoint.second.mountCheck();
-        }
+        checkResourcesStatus();
         m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
         // redraw screen
         m_pPsi.AdvControl(m_pPsi.ModuleNumber, ACTL_REDRAWALL, NULL);
@@ -288,7 +281,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                 {
                   if (!AskPasswordDlg(m_pPsi, it->second)) return 0;
                 }
-                hScreen = m_pPsi.SaveScreen(0,0,-1,-1);
+                hScreen = m_pPsi.SaveScreen(0, 0, -1, -1);
                 try
                 {
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceMount);
@@ -496,4 +489,20 @@ void Plugin::getPanelCurrentItemResource(HANDLE Plugin, std::wstring& name)
       name = PPI->CustomColumnData[1];
       free(PPI);
     }
+}
+
+void Plugin::checkResourcesStatus()
+{
+    HANDLE hScreen = nullptr;
+    const wchar_t* msgItems[2] = { NULL };
+    hScreen = m_pPsi.SaveScreen(0, 0, -1, -1);
+    msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceStatus);
+    msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
+    m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems,
+                   ARRAYSIZE(msgItems), 0);
+    for (auto& mountPoint : m_mountPoints)
+    {
+        mountPoint.second.mountCheck();
+    }
+    m_pPsi.RestoreScreen(hScreen);
 }

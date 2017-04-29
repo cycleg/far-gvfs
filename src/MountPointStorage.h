@@ -26,8 +26,10 @@ class MountPointStorage
 
     static void GenerateId(std::wstring& id);
     static void Encrypt(const std::wstring& in, std::vector<BYTE>& out);
+    // Versioning!
     void Decrypt(const std::vector<BYTE>& in, std::wstring& out) const;
 
+    // Versioning!
     bool Load(MountPoint& point) const;
 
     bool SetValue(HKEY folder, const std::wstring& field,

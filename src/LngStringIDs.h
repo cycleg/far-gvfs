@@ -62,6 +62,7 @@ enum
   MFirstUnmountResource,
 
   MResourceMount,
+  MResourceStatus,
   MPleaseWait,
   MMountError,
   MUnmountError,

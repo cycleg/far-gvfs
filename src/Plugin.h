@@ -64,6 +64,7 @@ private:
     void updatePanelItems();
     void unmountResource(MountPoint& point);
     void getPanelCurrentItemResource(HANDLE Plugin, std::wstring& name);
+    void checkResourcesStatus();
 
     Options Opt;
     KeyBarTitlesHelper m_keyBar;

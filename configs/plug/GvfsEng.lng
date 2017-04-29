@@ -60,6 +60,7 @@
 "First unmount the resource."
 
 "Resource mount"
+"Resource status"
 "Please, wait..."
 "Mount error"
 "Unmount error"

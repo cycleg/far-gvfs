@@ -9,7 +9,7 @@
 
 const wchar_t* MountPointStorage::StoragePath = L"Resources";
 const wchar_t* MountPointStorage::StorageVersionKey = L"Version";
-const DWORD MountPointStorage::StorageVersion = 1;
+const DWORD MountPointStorage::StorageVersion = 2;
 
 MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
   m_registryFolder(registryFolder),
@@ -144,11 +144,13 @@ bool MountPointStorage::Save(const MountPoint& point)
   }
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
+  DWORD l_askPassword = point.m_askPassword;
   Encrypt(point.m_password, l_password);
   // save always in current storage version
   bool ret = SetValue(hKey, L"Path", point.m_resPath) &&
              SetValue(hKey, L"User", point.m_user)  &&
-             SetValue(hKey, L"Password", l_password);
+             SetValue(hKey, L"Password", l_password) &&
+             SetValue(hKey, L"AskPassword", l_askPassword);
   WINPORT(RegCloseKey)(hKey);
   return ret;
 }
@@ -203,6 +205,7 @@ void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) 
   switch (m_version)
   {
     case 1:
+    case 2:
       {
         unsigned int i = 0;
         wchar_t symbol = 0;
@@ -238,21 +241,42 @@ bool MountPointStorage::Load(MountPoint& point) const
   key.append(point.m_storageId);
   res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, key.c_str(), 0, KEY_READ, &hKey);
   if (res != ERROR_SUCCESS) return false;
+  std::wstring l_resPath, l_user;
   std::vector<BYTE> l_password;
+  DWORD l_askPassword;
   bool ret = true;
   switch (m_version)
   {
     case 1:
-      ret = GetValue(hKey, L"Path", point.m_resPath) &&
-            GetValue(hKey, L"User", point.m_user)  &&
+      ret = GetValue(hKey, L"Path", l_resPath) &&
+            GetValue(hKey, L"User", l_user)  &&
             GetValue(hKey, L"Password", l_password);
-      if (ret) Decrypt(l_password, point.m_password);
+      if (ret)
+      {
+        // change record only on success
+        point.m_resPath = l_resPath;
+        point.m_user = l_user;
+        Decrypt(l_password, point.m_password);
+        point.m_askPassword = false; // для наглядности
+      }
+      break;
+    case 2:
+      ret = GetValue(hKey, L"Path", l_resPath) &&
+            GetValue(hKey, L"User", l_user)  &&
+            GetValue(hKey, L"Password", l_password) &&
+            GetValue(hKey, L"AskPassword", l_askPassword);
+      if (ret)
+      {
+        point.m_resPath = l_resPath;
+        point.m_user = l_user;
+        Decrypt(l_password, point.m_password);
+        point.m_askPassword = (l_askPassword == 1);
+      }
       break;
     default:
       break;
   }
   WINPORT(RegCloseKey)(hKey);
-  // TODO: converse to current storage version
   return ret;
 }
 
