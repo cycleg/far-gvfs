@@ -9,6 +9,9 @@
 #define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, item, 0))
 #define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, item, 0) == BSTATE_CHECKED)
 
+// for DlgProc functions
+PluginStartupInfo* startupInfo = nullptr;
+
 void InitDialogItems(PluginStartupInfo &info,
                      const std::vector<InitDialogItem>& initItems,
                      std::vector<FarDialogItem>& dlgItems)
@@ -44,6 +47,37 @@ void InitDialogItems(PluginStartupInfo &info,
     }
 }
 
+enum EEditResourceDlg
+{
+  ResourcePathLabel = 1,
+  ResourcePathInput,
+  UserLabel,
+  UserInput,
+  PasswordLabel,
+  PasswordInput,
+  AskPasswordInput,
+  OkButton,
+  CancelButton
+};
+
+LONG_PTR WINAPI EditResourceDlgProc(HANDLE hDlg, int msg, int param1, LONG_PTR param2)
+{
+    if ((msg == DN_BTNCLICK) && (param1 == EEditResourceDlg::AskPasswordInput))
+    {
+        // password input enable/disable if checkbox unset/set 
+        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, EEditResourceDlg::PasswordInput, param2 == 0);
+        if (param2)
+        {
+          // clear password input
+          FarDialogItemData data;
+          data.PtrLength = 0;
+          data.PtrData = nullptr;
+          startupInfo->SendDlgMessage(hDlg, DM_SETTEXT, EEditResourceDlg::PasswordInput, (LONG_PTR)&data);
+        }
+    }
+    return startupInfo->DefDlgProc(hDlg, msg, param1, param2);
+}
+
 bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 {
     const int DIALOG_WIDTH = 78;
@@ -64,8 +98,9 @@ bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 
         { DI_TEXT, 5, 6, 0, 6, 0, 0, 0, 0,
           MPassword, L"", 0 },
-        { DI_EDIT, 5, 7, DIALOG_WIDTH - 6, 7, 1, 0, 0, 0,
-          -1, mountPoint.getPassword().c_str(), 0 },
+        { DI_EDIT, 5, 7, DIALOG_WIDTH - 6, 7, 1, 0,
+          mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0, -1,
+          mountPoint.getPassword().c_str(), 0 },
 
         { DI_CHECKBOX, 5, 8, 0, 8, 0, mountPoint.getAskPassword(), 0, 0,
           MAskPasswordEveryTime, L"", 0 },
@@ -77,20 +112,21 @@ bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
     };
     std::vector<FarDialogItem> dialogItems;
     InitDialogItems(info, initItems, dialogItems);
+    startupInfo = &info;
 
     HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
                                   DIALOG_HEIGHT, L"Config", dialogItems.data(),
-                                  dialogItems.size(), 0, 0, NULL, 0);
-
+                                  dialogItems.size(), 0, 0, EditResourceDlgProc, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
-    std::wstring l_resPath = DLG_GET_TEXTPTR(info, hDlg, 2); // reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
-    std::wstring l_user = DLG_GET_TEXTPTR(info, hDlg, 4); // reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 4, 0));
-    std::wstring l_password = DLG_GET_TEXTPTR(info, hDlg, 6); // reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 6, 0));
-    bool l_askPassword = DLG_GET_CHECKBOX(info, hDlg, 7); // info.SendDlgMessage(hDlg, DM_GETCHECK, 7, 0) == BSTATE_CHECKED;
+    std::wstring l_resPath = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::ResourcePathInput);
+    std::wstring l_user = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::UserInput);
+    std::wstring l_password = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::PasswordInput);
+    bool l_askPassword = DLG_GET_CHECKBOX(info, hDlg, EEditResourceDlg::AskPasswordInput);
     info.DialogFree(hDlg);
+    startupInfo = nullptr;
     // check user input
-    if ((ret == -1) || (ret == int(initItems.size()) - 1))
+    if ((ret == -1) || (ret == EEditResourceDlg::CancelButton))
     {
         return false;
     }
@@ -149,13 +185,16 @@ bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint)
     };
     std::vector<FarDialogItem> dialogItems;
     InitDialogItems(info, initItems, dialogItems);
+    startupInfo = &info;
+
     HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
                                   DIALOG_HEIGHT, L"Config", dialogItems.data(),
                                   dialogItems.size(), 0, 0, NULL, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
-    std::wstring l_password = DLG_GET_TEXTPTR(info, hDlg, 2); // reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, 2, 0));
+    std::wstring l_password = DLG_GET_TEXTPTR(info, hDlg, 2);
     info.DialogFree(hDlg);
+    startupInfo = nullptr;
     // check user input
     if ((ret == -1) || (ret == int(initItems.size()) - 1))
     {
