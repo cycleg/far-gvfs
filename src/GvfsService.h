@@ -19,6 +19,16 @@ public:
     bool mounted(const std::string& resPath);
 
 private:
+    void on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
+                         const Glib::ustring& msg,
+                         const std::vector<Glib::ustring>& choices);
+    void on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_operation,
+                         bool l_anonymous, const Glib::ustring& msg,
+                         const Glib::ustring& defaultUser,
+                         const Glib::ustring& defaultdomain,
+                         Gio::AskPasswordFlags flags);
+    void on_aborted(Glib::RefPtr<Gio::MountOperation>& mount_operation);
+
     void mount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
     bool unmount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
     Glib::RefPtr<Gio::Mount> find_mount_cb(Glib::RefPtr<Gio::AsyncResult>& result);

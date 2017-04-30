@@ -1,4 +1,5 @@
 #include <iostream>
+#include <functional>
 #include "GvfsService.h"
 
 GvfsService::GvfsService() :
@@ -10,6 +11,8 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
                         const std::string &password)
     throw(GvfsServiceException, Glib::Error)
 {
+    using namespace std::placeholders;
+
     m_exception.reset();
     m_mountPath.clear();
     m_mountName.clear();
@@ -20,6 +23,7 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
 
     m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
+std::cerr << "GvfsService::mount() mount operation " << mount_operation.operator->() << std::endl;
 
     bool l_anonymous = userName.empty() && password.empty();
 
@@ -27,50 +31,16 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
     if (!password.empty()) mount_operation->set_password(password);
 
     // connect mount_operation slots
-    mount_operation->signal_ask_password().connect(
-    [mount_operation, l_anonymous](const Glib::ustring& msg,
-                                   const Glib::ustring& defaultUser,
-                                   const Glib::ustring& defaultdomain,
-                                   Gio::AskPasswordFlags flags)
-    {
-std::cerr << "Gvfs on signal_ask_password ask password: " << msg << std::endl
-          << "Gvfs on signal_ask_password default user: " << defaultUser << std::endl
-          << "Gvfs on signal_ask_password default domain: " << defaultdomain << std::endl;
-
-        if ((flags & G_ASK_PASSWORD_ANONYMOUS_SUPPORTED) && l_anonymous)
-        {
-std::cerr << "Gvfs on signal_ask_password set anonymous" << std::endl;
-            mount_operation->set_anonymous(true);
-        }
-        else
-        {
-            // trigger functor for entering user credentials
-            if (flags & G_ASK_PASSWORD_NEED_USERNAME)
-            {
-std::cerr << "Gvfs on signal_ask_password NEED USERNAME" << std::endl;
-                // trigger user name enter callback, call passwd functor
-            }
-            if (flags & G_ASK_PASSWORD_NEED_DOMAIN)
-            {
-std::cerr << "Gvfs on signal_ask_password NEED DOMAIN" << std::endl;
-                // trigger domain name enter callback, call passwd functor
-            }
-            if (flags & G_ASK_PASSWORD_NEED_PASSWORD)
-            {
-std::cerr << "Gvfs on signal_ask_password NEED PASSWORD" << std::endl;
-                // trigger password name enter callback, call passwd functor
-            }
-        }
-        mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
-    });
     mount_operation->signal_ask_question().connect(
-    [mount_operation](const Glib::ustring& msg, const /*Glib::StringArrayHandle*/std::vector<Glib::ustring>& choices)
-    {
-std::cerr << "on signal_ask_question: " << msg.raw() << std::endl;
-std::cerr << "choices:" << std::endl;
-for (const auto& choice : choices) std::cerr << choice.raw() << std::endl;
-        mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
-    });
+        std::bind(&GvfsService::on_ask_question, this, mount_operation, _1, _2)
+    );
+    mount_operation->signal_ask_password().connect(
+        std::bind(&GvfsService::on_ask_password, this, mount_operation, l_anonymous,
+                  _1, _2, _3, _4)
+    );
+    mount_operation->signal_aborted().connect(
+        std::bind(&GvfsService::on_aborted, this, mount_operation)
+    );
 
     // do mount
     bool l_mounted = false;
@@ -83,7 +53,7 @@ for (const auto& choice : choices) std::cerr << choice.raw() << std::endl;
                                        });
         m_mountCount++;
 std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::endl;
-        if(m_mountCount > 0)
+        if (m_mountCount > 0)
         {
             m_mainLoop->run();
         }
@@ -127,7 +97,7 @@ bool GvfsService::umount(const std::string &resPath)
                        });
         m_mountCount++;
 std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::endl;
-        if(m_mountCount > 0)
+        if (m_mountCount > 0)
         {
             m_mainLoop->run();
         }
@@ -169,7 +139,7 @@ bool GvfsService::mounted(const std::string& resPath)
                                            });
         m_mountCount++;
 std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std::endl;
-        if(m_mountCount > 0)
+        if (m_mountCount > 0)
         {
             m_mainLoop->run();
         }
@@ -190,6 +160,59 @@ std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std:
     return (l_mount.operator->() != nullptr);
 }
 
+void GvfsService::on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
+                                  const Glib::ustring& msg,
+                                  const std::vector<Glib::ustring>& choices)
+{
+std::cerr << "on signal_ask_question: " << msg.raw() << std::endl;
+std::cerr << "choices:" << std::endl;
+int i = 0;
+for (const auto& choice : choices) std::cerr << i++ << " " << choice.raw() << std::endl;
+    mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
+}
+
+void GvfsService::on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_operation,
+                                  bool l_anonymous, const Glib::ustring& msg,
+                                  const Glib::ustring& defaultUser,
+                                  const Glib::ustring& defaultdomain,
+                                  Gio::AskPasswordFlags flags)
+{
+std::cerr << "Gvfs on signal_ask_password ask password: " << msg << std::endl
+          << "Gvfs on signal_ask_password default user: " << defaultUser << std::endl
+          << "Gvfs on signal_ask_password default domain: " << defaultdomain << std::endl;
+
+    if ((flags & G_ASK_PASSWORD_ANONYMOUS_SUPPORTED) && l_anonymous)
+    {
+std::cerr << "Gvfs on signal_ask_password set anonymous" << std::endl;
+        mount_operation->set_anonymous(true);
+    }
+    else
+    {
+        // trigger functor for entering user credentials
+        if (flags & G_ASK_PASSWORD_NEED_USERNAME)
+        {
+std::cerr << "Gvfs on signal_ask_password NEED USERNAME" << std::endl;
+            // trigger user name enter callback, call passwd functor
+        }
+        if (flags & G_ASK_PASSWORD_NEED_DOMAIN)
+        {
+std::cerr << "Gvfs on signal_ask_password NEED DOMAIN" << std::endl;
+            // trigger domain name enter callback, call passwd functor
+        }
+        if (flags & G_ASK_PASSWORD_NEED_PASSWORD)
+        {
+std::cerr << "Gvfs on signal_ask_password NEED PASSWORD" << std::endl;
+            // trigger password name enter callback, call passwd functor
+        }
+    }
+    mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
+}
+
+void GvfsService::on_aborted(Glib::RefPtr<Gio::MountOperation>& mount_operation)
+{
+std::cerr << "on signal_aborted" << std::endl;
+}
+
 void GvfsService::mount_cb(Glib::RefPtr<Gio::AsyncResult>& result)
 {
 std::cerr << "GvfsService::mount_cb()" << std::endl;
@@ -207,7 +230,7 @@ std::cerr << "GvfsService::mount_cb()" << std::endl;
     m_mountCount--;
 std::cerr << "GvfsService::mount_cb() dec m_mountCount: " << m_mountCount << std::endl;
 
-    if(m_mountCount == 0)
+    if (m_mountCount == 0)
     {
         m_mainLoop->quit();
     }
@@ -233,7 +256,7 @@ std::cerr << "GvfsService::unmount_cb() " << mount.operator->() << std::endl;
     m_mountCount--;
 std::cerr << "GvfsService::unmount_cb() dec m_mountCount: " << m_mountCount << std::endl;
 
-    if(m_mountCount == 0)
+    if (m_mountCount == 0)
     {
         m_mainLoop->quit();
     }
@@ -258,7 +281,7 @@ std::cerr << "GvfsService::find_mount_cb()" << std::endl;
     m_mountCount--;
 std::cerr << "GvfsService::find_mount_cb() dec m_mountCount: " << m_mountCount << std::endl;
 
-    if(m_mountCount == 0)
+    if (m_mountCount == 0)
     {
         m_mainLoop->quit();
     }
