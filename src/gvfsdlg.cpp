@@ -65,6 +65,7 @@ LONG_PTR WINAPI EditResourceDlgProc(HANDLE hDlg, int msg, int param1, LONG_PTR p
     if ((msg == DN_BTNCLICK) && (param1 == EEditResourceDlg::AskPasswordInput))
     {
         // password input enable/disable if checkbox unset/set 
+        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, EEditResourceDlg::PasswordLabel, param2 == 0);
         startupInfo->SendDlgMessage(hDlg, DM_ENABLE, EEditResourceDlg::PasswordInput, param2 == 0);
         if (param2)
         {
@@ -96,7 +97,8 @@ bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
         { DI_EDIT, 5, 5, DIALOG_WIDTH - 6, 5, 1, 0, 0, 0,
           -1, mountPoint.getUser().c_str(), 0 },
 
-        { DI_TEXT, 5, 6, 0, 6, 0, 0, 0, 0,
+        { DI_TEXT, 5, 6, 0, 6, 0, 0,
+          mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0,
           MPassword, L"", 0 },
         { DI_EDIT, 5, 7, DIALOG_WIDTH - 6, 7, 1, 0,
           mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0, -1,
