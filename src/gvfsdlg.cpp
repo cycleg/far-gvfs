@@ -81,7 +81,7 @@ LONG_PTR WINAPI EditResourceDlgProc(HANDLE hDlg, int msg, int param1, LONG_PTR p
 
 bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 {
-    const int DIALOG_WIDTH = 78;
+    const int DIALOG_WIDTH = 68;
     const int DIALOG_HEIGHT = 13;
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
@@ -89,18 +89,18 @@ bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 
         { DI_TEXT, 5, 2, 0, 2, 0, 0, 0, 0,
           MResourcePath, L"", 0 },
-        { DI_EDIT, 5, 3, DIALOG_WIDTH - 6, 3, 1, 0, 0, 0,
+        { DI_EDIT, 5, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
           -1, mountPoint.getResPath().c_str(), 0 },
 
         { DI_TEXT, 5, 4, 0, 4, 0, 0, 0, 0,
           MUser, L"", 0 },
-        { DI_EDIT, 5, 5, DIALOG_WIDTH - 6, 5, 1, 0, 0, 0,
+        { DI_EDIT, 5, 5, DIALOG_WIDTH - 5, 5, 1, 0, 0, 0,
           -1, mountPoint.getUser().c_str(), 0 },
 
         { DI_TEXT, 5, 6, 0, 6, 0, 0,
           mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0,
           MPassword, L"", 0 },
-        { DI_EDIT, 5, 7, DIALOG_WIDTH - 6, 7, 1, 0,
+        { DI_PSWEDIT, 5, 7, DIALOG_WIDTH - 5, 7, 1, 0,
           mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0, -1,
           mountPoint.getPassword().c_str(), 0 },
 
@@ -169,7 +169,7 @@ bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 
 bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 {
-    const int DIALOG_WIDTH = 78;
+    const int DIALOG_WIDTH = 48;
     const int DIALOG_HEIGHT = 7;
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
@@ -177,7 +177,7 @@ bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint)
 
         { DI_TEXT, 5, 2, 0, 2, 0, 0, 0, 0,
           MPassword, L"", 0 },
-        { DI_PSWEDIT, 5, 3, DIALOG_WIDTH - 6, 3, 1, 0, 0, 0,
+        { DI_PSWEDIT, 5, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
           -1, L"", 0 },
 
         { DI_BUTTON, 0, 5, 0, 5, 0, 0, DIF_CENTERGROUP, 1,
