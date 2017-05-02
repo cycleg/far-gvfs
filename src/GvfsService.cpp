@@ -9,10 +9,11 @@ GvfsService::GvfsService() :
 
 bool GvfsService::mount(const std::string &resPath, const std::string &userName,
                         const std::string &password)
-    throw(GvfsServiceException, Glib::Error)
+    throw(GvfsServiceException)
 {
     using namespace std::placeholders;
 
+std::cerr << "GvfsService::mount() " << resPath << std::endl;
     m_exception.reset();
     m_mountPath.clear();
     m_mountName.clear();
@@ -23,7 +24,6 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
 
     m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
-std::cerr << "GvfsService::mount() mount operation " << mount_operation.operator->() << std::endl;
 
     bool l_anonymous = userName.empty() && password.empty();
 
@@ -63,20 +63,24 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         std::cout << "GvfsService::mount() path: " << m_mountPath << std::endl;
         l_mounted = true;
     }
-    catch(const Glib::Error& ex)
+    catch (const Glib::Error& ex)
     {
         std::cerr << "GvfsService::mount() Glib::Error: " << ex.what() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
-        if (m_exception.get() != nullptr)
-            throw *m_exception;
-            else throw;
+        if (m_exception.get() == nullptr)
+        {
+          m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
+                                         ex.code(), ex.what());
+        }
+        throw *m_exception;
     }
     return l_mounted;
 }
 
 bool GvfsService::umount(const std::string &resPath)
-    throw(GvfsServiceException, Glib::Error)
+    throw(GvfsServiceException)
 {
+std::cerr << "GvfsService::umount() " << resPath << std::endl;
     m_exception.reset();
 
     Gio::init();
@@ -103,24 +107,39 @@ std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::
         }
         
     }
-    catch(const Glib::Error& ex)
+    catch (const Glib::Error& ex)
     {
         std::cerr << "GvfsService::umount() Glib::Error: "<< ex.what() << std::endl
-                  << "m_mountCount: " << m_mountCount;
-        if (m_exception.get() != nullptr)
-            throw *m_exception;
-            else throw;
-    }
-    if (l_unmounted)
-    {
+                  << "m_mountCount: " << m_mountCount << std::endl;
+        if (m_exception.get() == nullptr)
+        {
+          m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
+                                         ex.code(), ex.what());
+        }
         m_mountPath.clear();
         m_mountName.clear();
+        throw *m_exception;
     }
+    if (l_unmounted)
+        {
+            m_mountPath.clear();
+            m_mountName.clear();
+        }
+        else
+        {
+            if (m_exception.get() != nullptr)
+            {
+                m_mountPath.clear();
+                m_mountName.clear();
+                throw *m_exception;
+            }
+        }
     return l_unmounted;
 }
 
 bool GvfsService::mounted(const std::string& resPath)
 {
+std::cerr << "GvfsService::mounted() " << resPath << std::endl;
     m_exception.reset();
     m_mountPath.clear();
     m_mountName.clear();
@@ -149,7 +168,7 @@ std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std:
             m_mountPath = l_mount->get_default_location()->get_path();
         }
     }
-    catch(const Glib::Error& ex)
+    catch (const Glib::Error& ex)
     {
         std::cerr << "GvfsService::mounted() Glib::Error: "<< ex.what()
                   << std::endl;
@@ -220,7 +239,7 @@ std::cerr << "GvfsService::mount_cb()" << std::endl;
     {
         m_file->mount_enclosing_volume_finish(result);
     }
-    catch(const Glib::Error& ex)
+    catch (const Glib::Error& ex)
     {
         std::cerr << "GvfsService::mount_cb() Glib::Error: "<< ex.what() << std::endl;
         // fill exception
@@ -239,14 +258,12 @@ std::cerr << "GvfsService::mount_cb() dec m_mountCount: " << m_mountCount << std
 bool GvfsService::unmount_cb(Glib::RefPtr<Gio::AsyncResult> &result)
 {
     Glib::RefPtr<Gio::Mount> mount = Glib::RefPtr<Gio::Mount>::cast_dynamic(result->get_source_object_base());
-
-std::cerr << "GvfsService::unmount_cb() " << mount.operator->() << std::endl;
     bool success = false;
     try
     {
         success = mount->unmount_finish(result);
     }
-    catch(const Glib::Error& ex)
+    catch (const Glib::Error& ex)
     {
         std::cerr << "GvfsService::unmount_cb() Glib::Error: "<< ex.what() << std::endl;
         // fill exception
@@ -271,7 +288,7 @@ std::cerr << "GvfsService::find_mount_cb()" << std::endl;
     {
         l_mount = m_file->find_enclosing_mount_finish(result);
     }
-    catch(const Glib::Error& ex)
+    catch (const Glib::Error& ex)
     {
         std::cerr << "GvfsService::find_mount_cb() Glib::Error: "<< ex.what() << std::endl;
         // fill exception

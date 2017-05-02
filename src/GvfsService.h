@@ -14,8 +14,8 @@ public:
     inline const std::string& getMountPath() const { return m_mountPath; }
 
     bool mount(const std::string& resPath, const std::string &userName,
-               const std::string &password) throw(GvfsServiceException, Glib::Error);
-    bool umount(const std::string& resPath) throw(GvfsServiceException, Glib::Error);
+               const std::string &password) throw(GvfsServiceException);
+    bool umount(const std::string& resPath) throw(GvfsServiceException);
     bool mounted(const std::string& resPath);
 
 private:

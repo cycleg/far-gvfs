@@ -63,7 +63,7 @@ private:
     void clearPanelItems();
     void updatePanelItems();
     void unmountResource(MountPoint& point);
-    void getPanelCurrentItemResource(HANDLE Plugin, std::wstring& name);
+    PluginPanelItem* getPanelCurrentItem(HANDLE Plugin);
     void checkResourcesStatus();
 
     Options Opt;

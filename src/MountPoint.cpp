@@ -80,7 +80,19 @@ bool MountPoint::unmount() throw(GvfsServiceException)
     if (resPath.empty()) return false;
 
     GvfsService service;
-    bool success = service.umount(resPath);
+    bool success = false;
+    try
+    {
+        success = service.umount(resPath);
+    }
+    catch (const GvfsServiceException& e)
+    {
+        // exception equal to unmount
+        m_mountPointPath.clear();
+        m_shareName.clear();
+        m_bMounted = false;
+        throw; // escalate error
+    }
     if (success)
     {
         m_mountPointPath.clear();
@@ -92,18 +104,23 @@ bool MountPoint::unmount() throw(GvfsServiceException)
 
 void MountPoint::mountCheck()
 {
-    if (m_bMounted) return;
-
     std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m_resPath);
     if (resPath.empty()) return;
 
     GvfsService service;
     if (service.mounted(resPath))
-    {
-        m_bMounted = true;
-        m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                      .from_bytes(service.getMountName());
-        m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                           .from_bytes(service.getMountPath());
-    }
+        {
+            m_bMounted = true;
+            m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                          .from_bytes(service.getMountName());
+            m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                               .from_bytes(service.getMountPath());
+        }
+        else
+        {
+            m_mountPointPath.clear();
+            m_shareName.clear();
+            m_bMounted = false;
+        }
+
 }

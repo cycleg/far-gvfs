@@ -63,10 +63,6 @@ void Plugin::exitFar()
             {
                 // ignore error here
             }
-            catch (const Glib::Error& error)
-            {
-                // ignore error here
-            }
     }
 }
 
@@ -182,9 +178,10 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
     else if ((key == VK_F4) && (controlState == 0))
     {
         // edit resource
-        std::wstring name;
-        getPanelCurrentItemResource(Plugin, name);
-        if (name.empty()) return 1; // no items, drop key
+        PluginPanelItem* item = getPanelCurrentItem(Plugin);
+        if (!item) return 1; // no item, drop key
+        std::wstring name = item->CustomColumnData[1];
+        free(item);
         auto it = m_mountPoints.find(name);
         if (it != m_mountPoints.end())
         {
@@ -231,9 +228,10 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
     else if ((controlState & PKF_SHIFT) && (key == VK_F8))
     {
         // unmount selected resource
-        std::wstring name;
-        getPanelCurrentItemResource(Plugin, name);
-        if (name.empty()) return 1; // no items, drop key
+        PluginPanelItem* item = getPanelCurrentItem(Plugin);
+        if (!item) return 1; // no item, drop key
+        std::wstring name = item->CustomColumnData[1];
+        free(item);
         auto it = m_mountPoints.find(name);
         if ((it != m_mountPoints.end()) && it->second.isMounted())
         {
@@ -293,14 +291,6 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                     isMount = it->second.mount();
                 }
                 catch (const GvfsServiceException& error)
-                {
-                    std::wstring buf =
-                        std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
-                    msgItems[1] = buf.c_str();
-                    m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                                   NULL, msgItems, ARRAYSIZE(msgItems), 0);
-                }
-                catch (const Glib::Error& error)
                 {
                     std::wstring buf =
                         std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
@@ -465,30 +455,23 @@ void Plugin::unmountResource(MountPoint& point)
         m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
                        NULL, msgItems, ARRAYSIZE(msgItems), 0);
     }
-    catch (const Glib::Error& error)
-    {
-        std::wstring buf =
-            std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
-        m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                       NULL, msgItems, ARRAYSIZE(msgItems), 0);
-    }
 }
 
-void Plugin::getPanelCurrentItemResource(HANDLE Plugin, std::wstring& name)
+PluginPanelItem* Plugin::getPanelCurrentItem(HANDLE Plugin)
 {
-    name.clear();
+    PluginPanelItem* PPI = nullptr;
     struct PanelInfo pInfo;
     m_pPsi.Control(Plugin, FCTL_GETPANELINFO, 0, (LONG_PTR)&pInfo);
-    if (pInfo.ItemsNumber < 1) return; // no items
-    PluginPanelItem* PPI = (PluginPanelItem*) malloc(
+    if (pInfo.ItemsNumber < 1) return PPI; // no items
+    PPI = (PluginPanelItem*) malloc(
         m_pPsi.Control(Plugin, FCTL_GETPANELITEM, pInfo.CurrentItem, 0)
     );
     if (PPI)
     {
-      m_pPsi.Control(Plugin, FCTL_GETPANELITEM, pInfo.CurrentItem, (LONG_PTR)PPI);
-      name = PPI->CustomColumnData[1];
-      free(PPI);
+        m_pPsi.Control(Plugin, FCTL_GETPANELITEM, pInfo.CurrentItem,
+                       (LONG_PTR)PPI);
     }
+    return PPI;
 }
 
 void Plugin::checkResourcesStatus()
