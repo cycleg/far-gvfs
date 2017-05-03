@@ -22,10 +22,6 @@ Plugin::Plugin():
 {
     Opt.AddToDisksMenu = true;
     Opt.AddToPluginsMenu = true;
-#if 0
-    m_keyBar.setNormalKey(7, L"MkMount");
-    m_keyBar.setNormalKey(4, L"EdMount");
-#endif
 }
 
 Plugin::~Plugin()
@@ -41,6 +37,10 @@ int Plugin::getVersion()
 void Plugin::setStartupInfo(const PluginStartupInfo* psi)
 {
     m_pPsi = *psi;
+    // key bar
+    m_keyBar.setNormalKey(6, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar));
+    m_keyBar.setShiftKey(3, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar));
+    m_keyBar.setShiftKey(7, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MShiftF8Bar));
     m_registryRoot.append(m_pPsi.RootKey);
     m_registryRoot.append(WGOOD_SLASH);
     m_registryRoot.append(MACRO_TEXT(PLUGIN_NAME));
@@ -129,9 +129,7 @@ void Plugin::getOpenPluginInfo(HANDLE Plugin, OpenPluginInfo* pluginInfo)
     pluginInfo->PanelModesArray = PanelModesArray;
     pluginInfo->PanelModesNumber = ARRAYSIZE(PanelModesArray);
     pluginInfo->StartPanelMode = _T('0');
-#if 0
     pluginInfo->KeyBar = &(m_keyBar.getKeyBar());
-#endif
 }
 
 int Plugin::getFindData(HANDLE Plugin, PluginPanelItem** PanelItem, int* itemsNumber, int OpMode)
