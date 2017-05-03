@@ -26,8 +26,17 @@ class MountPointStorage
 
     static void GenerateId(std::wstring& id);
     static void Encrypt(const std::wstring& in, std::vector<BYTE>& out);
+#ifdef USE_OPENSSL
+    static void Encrypt(const std::wstring& keydata, const std::wstring& in,
+                        std::vector<BYTE>& out);
+#endif
     // Versioning!
     void Decrypt(const std::vector<BYTE>& in, std::wstring& out) const;
+#ifdef USE_OPENSSL
+    // Versioning!
+    void Decrypt(const std::wstring& keydata, const std::vector<BYTE>& in,
+                 std::wstring& out) const;
+#endif
 
     // Versioning!
     bool Load(MountPoint& point) const;

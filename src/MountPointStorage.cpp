@@ -3,13 +3,18 @@
 #include <locale>
 #include <windows.h>
 #include <uuid/uuid.h>
+
+#ifdef USE_OPENSSL
+#include "Crypto.h"
+#endif
+
 #include "MountPointStorage.h"
 
 #define UUID_TEXT_SIZE (sizeof(uuid_t) * 2 + 5)
 
 const wchar_t* MountPointStorage::StoragePath = L"Resources";
 const wchar_t* MountPointStorage::StorageVersionKey = L"Version";
-const DWORD MountPointStorage::StorageVersion = 2;
+const DWORD MountPointStorage::StorageVersion = 3;
 
 MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
   m_registryFolder(registryFolder),
@@ -145,7 +150,11 @@ bool MountPointStorage::Save(const MountPoint& point)
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
   DWORD l_askPassword = point.m_askPassword;
+#ifdef USE_OPENSSL
+  Encrypt(point.m_storageId, point.m_password, l_password);
+#else
   Encrypt(point.m_password, l_password);
+#endif
   // save always in current storage version
   bool ret = SetValue(hKey, L"Path", point.m_resPath) &&
              SetValue(hKey, L"User", point.m_user)  &&
@@ -199,6 +208,22 @@ void MountPointStorage::Encrypt(const std::wstring& in, std::vector<BYTE>& out)
   }
 }
 
+#ifdef USE_OPENSSL
+void MountPointStorage::Encrypt(const std::wstring& keydata,
+                                const std::wstring& in,
+                                std::vector<BYTE>& out)
+{
+  std::vector<BYTE> plain;
+  std::string buf = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+                    .to_bytes(in);
+  Crypto crypto;
+  crypto.init(keydata);
+  for (const std::string::value_type ch : buf) plain.push_back((BYTE)ch);
+  out.clear();
+  crypto.encrypt(plain, out);
+}
+#endif
+
 void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) const
 {
   out.clear();
@@ -206,6 +231,7 @@ void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) 
   {
     case 1:
     case 2:
+    case 3:
       {
         unsigned int i = 0;
         wchar_t symbol = 0;
@@ -230,6 +256,30 @@ void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) 
   }
 }
 
+#ifdef USE_OPENSSL
+void MountPointStorage::Decrypt(const std::wstring& keydata,
+                                const std::vector<BYTE>& in,
+                                std::wstring& out) const
+{
+  std::vector<BYTE> plain;
+  std::string buf;
+  Crypto crypto;
+  crypto.init(keydata);
+  out.clear();
+  switch (m_version)
+  {
+    case 3:
+      crypto.decrypt(in, plain);
+      for (const BYTE ch : plain) buf.push_back(ch);
+      out = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
+            .from_bytes(buf);
+      break;
+    default:
+      break;
+  }
+}
+#endif
+
 bool MountPointStorage::Load(MountPoint& point) const
 {
   // не удалось создать хранилище на диске
@@ -244,13 +294,12 @@ bool MountPointStorage::Load(MountPoint& point) const
   std::wstring l_resPath, l_user;
   std::vector<BYTE> l_password;
   DWORD l_askPassword;
-  bool ret = true;
+  bool ret = GetValue(hKey, L"Path", l_resPath) &&
+             GetValue(hKey, L"User", l_user)  &&
+             GetValue(hKey, L"Password", l_password);
   switch (m_version)
   {
     case 1:
-      ret = GetValue(hKey, L"Path", l_resPath) &&
-            GetValue(hKey, L"User", l_user)  &&
-            GetValue(hKey, L"Password", l_password);
       if (ret)
       {
         // change record only on success
@@ -261,15 +310,27 @@ bool MountPointStorage::Load(MountPoint& point) const
       }
       break;
     case 2:
-      ret = GetValue(hKey, L"Path", l_resPath) &&
-            GetValue(hKey, L"User", l_user)  &&
-            GetValue(hKey, L"Password", l_password) &&
+      ret = ret &&
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
         point.m_resPath = l_resPath;
         point.m_user = l_user;
         Decrypt(l_password, point.m_password);
+        point.m_askPassword = (l_askPassword == 1);
+      }
+    case 3:
+      ret = ret &&
+            GetValue(hKey, L"AskPassword", l_askPassword);
+      if (ret)
+      {
+        point.m_resPath = l_resPath;
+        point.m_user = l_user;
+#ifdef USE_OPENSSL
+        Decrypt(point.m_storageId, l_password, point.m_password);
+#else
+        Decrypt(l_password, point.m_password);
+#endif
         point.m_askPassword = (l_askPassword == 1);
       }
       break;
