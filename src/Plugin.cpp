@@ -36,14 +36,26 @@ int Plugin::getVersion()
 
 void Plugin::setStartupInfo(const PluginStartupInfo* psi)
 {
+    static const wchar_t* emptyHint = L"";
     m_pPsi = *psi;
+
     // key bar
+    // all blocked in processKey()
+    m_keyBar.setNormalKey(2, emptyHint); 
+    m_keyBar.setNormalKey(4, emptyHint);
+    m_keyBar.setNormalKey(5, emptyHint);
+    for (int i = 0; i < 3; i++) m_keyBar.setShiftKey(i, emptyHint);
+    m_keyBar.setShiftKey(4, emptyHint);
+    m_keyBar.setShiftKey(5, emptyHint);
+    for (int i = 2; i < 6; i++) m_keyBar.setAltKey(i, emptyHint);
+
     m_keyBar.setNormalKey(6, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar));
     m_keyBar.setShiftKey(3, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar));
     m_keyBar.setShiftKey(7, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MShiftF8Bar));
     m_registryRoot.append(m_pPsi.RootKey);
     m_registryRoot.append(WGOOD_SLASH);
     m_registryRoot.append(MACRO_TEXT(PLUGIN_NAME));
+
     // load mount points from registry
     MountPointStorage storage(m_registryRoot);
     storage.LoadAll(m_mountPoints);
@@ -168,12 +180,15 @@ int Plugin::processHostFile(HANDLE Plugin, PluginPanelItem* PanelItem, int items
 int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
 {
 std::cerr << "Plugin::processKey() key = " << key << std::endl;
-    if ((key == VK_F3) || (key == VK_F5) || (key == VK_F6))
+    if (((controlState == 0) && ((key == VK_F3) || (key == VK_F5) || (key == VK_F6))) ||
+        ((controlState == PKF_SHIFT) && 
+         (((key >= VK_F1) && (key <= VK_F3)) || (key == VK_F5) || (key == VK_F6))) ||
+        ((controlState == PKF_ALT) && (key >= VK_F3) && (key <= VK_F6)))
     {
         // block keys
         return 1;
     }
-    else if ((key == VK_F4) && (controlState == 0))
+    else if ((controlState == 0) && (key == VK_F4))
     {
         // edit resource
         PluginPanelItem* item = getPanelCurrentItem(Plugin);
@@ -207,7 +222,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         }
         return 1; // return 1: far should not handle this key
     }
-    else if ((controlState & PKF_SHIFT) && (key == VK_F4))
+    else if ((controlState == PKF_SHIFT) && (key == VK_F4))
     {
         // add new resource
         MountPoint point(MountPointStorage::PointFactory());
@@ -223,7 +238,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         }
         return 1;
     }
-    else if ((controlState & PKF_SHIFT) && (key == VK_F8))
+    else if ((controlState == PKF_SHIFT) && (key == VK_F8))
     {
         // unmount selected resource
         PluginPanelItem* item = getPanelCurrentItem(Plugin);
@@ -240,7 +255,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         }
         return 1;
     }
-    else if ((controlState & PKF_CONTROL) && (key == 'R'))
+    else if ((controlState == PKF_CONTROL) && (key == 'R'))
     {
         // refresh resources status
         checkResourcesStatus();
