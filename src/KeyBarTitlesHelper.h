@@ -18,6 +18,8 @@ public:
 
 public:
     KeyBarTitlesHelper();
+    ~KeyBarTitlesHelper();
+
     KeyBarTitles& getKeyBar();
     void setKey(int index, KeyType, const std::wstring& name);
     void setNormalKey(int index, const std::wstring& name);
@@ -29,7 +31,7 @@ public:
     void setCtrlKey(int index, const std::wstring& name);
 
 private:
-    void setKeyGeneric(int index, wchar_t *key[], const std::wstring &name);
+    void setKeyGeneric(int index, wchar_t* key[], const std::wstring& name);
 
     KeyBarTitles m_keyBar;
 };

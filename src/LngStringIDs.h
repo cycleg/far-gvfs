@@ -66,5 +66,8 @@ enum
   MPleaseWait,
   MMountError,
   MUnmountError,
+
+  MF7Bar,
+  MShiftF8Bar,
   __LAST_LNG_ENTRY__
 };
