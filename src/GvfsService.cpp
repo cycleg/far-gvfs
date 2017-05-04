@@ -2,6 +2,31 @@
 #include <functional>
 #include "GvfsService.h"
 
+// "Объезд" ошибки в glibmm v2.50.0: проблемы с управлением памятью из-за
+// использования Glib::StringArrayHandle в сигнале/слоте ask_question класса
+// Gio::MountOperation. Приходится использовать оригинальный C-интерфейс GIO
+// и глобальную переменную ask_question_callback. См. GvfsService::mount() и
+// слот GvfsService::on_ask_question().
+//
+// TODO
+// В старших версиях glibmm тип Glib::StringArrayHandle полностью заменен на
+// std::vector<Glib::ustring>. После обновления версии в Debian можно будет
+// проверить работоспособность Gio::MountOperation, а затем перейти к условной
+// компиляции GvfsService в зависимости от версии glibmm
+namespace {
+
+std::function<void(GMountOperation*, char*, char**, gpointer)>
+    ask_question_callback;
+
+extern "C" void ask_question_wrapper(GMountOperation* op,
+                                     char* message, char** choices,
+                                     gpointer user_data)
+{
+    ask_question_callback(op, message, choices, user_data);
+}
+
+} // anonymous namespace
+
 GvfsService::GvfsService() :
     m_mountCount(0)
 {
@@ -31,9 +56,15 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
     if (!password.empty()) mount_operation->set_password(password);
 
     // connect mount_operation slots
+#if 0
     mount_operation->signal_ask_question().connect(
         std::bind(&GvfsService::on_ask_question, this, mount_operation, _1, _2)
     );
+#endif
+    ask_question_callback = std::bind(&GvfsService::on_ask_question, this,
+                                      _1, _2, _3, _4);
+    g_signal_connect(mount_operation->gobj(), "ask_question",
+                     G_CALLBACK(ask_question_wrapper), nullptr);
     mount_operation->signal_ask_password().connect(
         std::bind(&GvfsService::on_ask_password, this, mount_operation, l_anonymous,
                   _1, _2, _3, _4)
@@ -65,7 +96,7 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::mount() Glib::Error: " << ex.what() << std::endl
+        std::cerr << "GvfsService::mount() Glib::Error: " << ex.what().raw() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
         if (m_exception.get() == nullptr)
         {
@@ -109,7 +140,7 @@ std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::umount() Glib::Error: "<< ex.what() << std::endl
+        std::cerr << "GvfsService::umount() Glib::Error: "<< ex.what().raw() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
         if (m_exception.get() == nullptr)
         {
@@ -170,7 +201,7 @@ std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std:
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::mounted() Glib::Error: "<< ex.what()
+        std::cerr << "GvfsService::mounted() Glib::Error: "<< ex.what().raw()
                   << std::endl;
         l_mount.reset();
     }
@@ -179,15 +210,35 @@ std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std:
     return (l_mount.operator->() != nullptr);
 }
 
+// TODO
+// Реализовать выбор варианта ответа пользователем.
+#if 0
 void GvfsService::on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                                   const Glib::ustring& msg,
-                                  const std::vector<Glib::ustring>& choices)
+                                  const Glib::StringArrayHandle& choices)
 {
 std::cerr << "on signal_ask_question: " << msg.raw() << std::endl;
 std::cerr << "choices:" << std::endl;
 int i = 0;
 for (const auto& choice : choices) std::cerr << i++ << " " << choice.raw() << std::endl;
     mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
+}
+#endif
+void GvfsService::on_ask_question(GMountOperation* op, char* message,
+                                  char** choices, gpointer user_data)
+{
+    (void)user_data;
+std::cerr << "on signal_ask_question: " << message << std::endl;
+std::cerr << "choices:" << std::endl;
+int i = 0;
+char** choice = choices;
+while (*choice)
+{
+std::cerr << i << " " << *choice << std::endl;
+i++;
+choice++;
+}
+    g_mount_operation_reply (op, G_MOUNT_OPERATION_HANDLED);
 }
 
 void GvfsService::on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_operation,
@@ -196,9 +247,9 @@ void GvfsService::on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_opera
                                   const Glib::ustring& defaultdomain,
                                   Gio::AskPasswordFlags flags)
 {
-std::cerr << "Gvfs on signal_ask_password ask password: " << msg << std::endl
-          << "Gvfs on signal_ask_password default user: " << defaultUser << std::endl
-          << "Gvfs on signal_ask_password default domain: " << defaultdomain << std::endl;
+std::cerr << "Gvfs on signal_ask_password ask password: " << msg.raw() << std::endl
+          << "Gvfs on signal_ask_password default user: " << defaultUser.raw() << std::endl
+          << "Gvfs on signal_ask_password default domain: " << defaultdomain.raw() << std::endl;
 
     if ((flags & G_ASK_PASSWORD_ANONYMOUS_SUPPORTED) && l_anonymous)
     {
@@ -241,7 +292,7 @@ std::cerr << "GvfsService::mount_cb()" << std::endl;
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::mount_cb() Glib::Error: "<< ex.what() << std::endl;
+        std::cerr << "GvfsService::mount_cb() Glib::Error: "<< ex.what().raw() << std::endl;
         // fill exception
         m_exception = std::make_shared<GvfsServiceException>(ex.domain(), ex.code(), ex.what());
     }
@@ -265,7 +316,7 @@ bool GvfsService::unmount_cb(Glib::RefPtr<Gio::AsyncResult> &result)
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::unmount_cb() Glib::Error: "<< ex.what() << std::endl;
+        std::cerr << "GvfsService::unmount_cb() Glib::Error: "<< ex.what().raw() << std::endl;
         // fill exception
         m_exception = std::make_shared<GvfsServiceException>(ex.domain(), ex.code(), ex.what());
     }
@@ -290,7 +341,7 @@ std::cerr << "GvfsService::find_mount_cb()" << std::endl;
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::find_mount_cb() Glib::Error: "<< ex.what() << std::endl;
+        std::cerr << "GvfsService::find_mount_cb() Glib::Error: "<< ex.what().raw() << std::endl;
         // fill exception
         m_exception = std::make_shared<GvfsServiceException>(ex.domain(), ex.code(), ex.what());
     }

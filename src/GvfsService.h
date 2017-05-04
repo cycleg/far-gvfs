@@ -5,6 +5,8 @@
 #include <gtkmm.h>
 #include "GvfsServiceException.h"
 
+// Класс не потокобезопасный из-за уродливого "объезда" ошибки в glibmm
+// v2.50.0. Подробнее см. в GvfsService.cpp.
 class GvfsService
 {
 public:
@@ -19,9 +21,13 @@ public:
     bool mounted(const std::string& resPath);
 
 private:
+#if 0
     void on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                          const Glib::ustring& msg,
-                         const std::vector<Glib::ustring>& choices);
+                         const Glib::StringArrayHandle& choices);
+#endif
+    void on_ask_question(GMountOperation* op, char* message, char** choices,
+                         gpointer user_data);
     void on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                          bool l_anonymous, const Glib::ustring& msg,
                          const Glib::ustring& defaultUser,
