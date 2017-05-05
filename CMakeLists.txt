@@ -10,6 +10,7 @@ set(HEADERS
     src/MountPoint.h
     src/MountPointStorage.h
     src/Plugin.h
+    src/RegistryStorage.h
 )
 
 set(SOURCES
@@ -21,6 +22,7 @@ set(SOURCES
     src/MountPointStorage.cpp
     src/Plugin.cpp
     src/PluginMain.cpp
+    src/RegistryStorage.cpp
 )
 
 find_package(PkgConfig REQUIRED MODULE)

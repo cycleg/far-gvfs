@@ -1,9 +1,8 @@
 #pragma once
 
-#include <string>
-#include <windows.h>
+#include "RegistryStorage.h"
 
-class Configuration
+class Configuration: public RegistryStorage
 {
   public:
     static Configuration* Instance(const std::wstring& registryFolder);
@@ -21,11 +20,5 @@ class Configuration
 
     void load();
 
-    bool SetValue(HKEY folder, const std::wstring& field,
-                   const DWORD value) const;
-    bool GetValue(HKEY folder, const std::wstring& field,
-                   DWORD& value) const;
-
-    std::wstring m_registryFolder;
     bool m_unmountAtExit;
 };

@@ -3,7 +3,7 @@
 Configuration* Configuration::instance = nullptr;
 
 Configuration::Configuration(const std::wstring& registryFolder):
-  m_registryFolder(registryFolder),
+  RegistryStorage(registryFolder),
   m_unmountAtExit(true)
 {
 }
@@ -60,23 +60,4 @@ void Configuration::load()
       }
     WINPORT(RegCloseKey)(hKey);
   }
-}
-
-bool Configuration::SetValue(HKEY folder, const std::wstring& field,
-                                 const DWORD value) const
-{
-  if (!folder || field.empty()) return false;
-  LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_DWORD,
-                                    (BYTE *)&value, sizeof(value));
-  return res == ERROR_SUCCESS;
-}
-
-bool Configuration::GetValue(HKEY folder, const std::wstring& field,
-                                 DWORD& value) const
-{
-  if (!folder || field.empty()) return false;
-  DWORD Type, size = sizeof(DWORD);
-  LONG res = WINPORT(RegQueryValueEx)(folder, field.c_str(), 0, &Type,
-                                      (BYTE*)&value, &size);
-  return res == ERROR_SUCCESS;
 }

@@ -1,12 +1,11 @@
 #pragma once
 
-#include <string>
 #include <map>
 #include <vector>
-#include <WinCompat.h>
 #include "MountPoint.h"
+#include "RegistryStorage.h"
 
-class MountPointStorage
+class MountPointStorage: public RegistryStorage
 {
   public:
     MountPointStorage(const std::wstring& registryFolder);
@@ -41,19 +40,5 @@ class MountPointStorage
     // Versioning!
     bool Load(MountPoint& point) const;
 
-    bool SetValue(HKEY folder, const std::wstring& field,
-                  const std::vector<BYTE>& value) const;
-    bool SetValue(HKEY folder, const std::wstring& field,
-                  const std::wstring& value) const;
-    bool SetValue(HKEY folder, const std::wstring& field,
-                  const DWORD value) const;
-    bool GetValue(HKEY folder, const std::wstring& field,
-                  std::vector<BYTE>& value) const;
-    bool GetValue(HKEY folder, const std::wstring& field,
-                  std::wstring& value) const;
-    bool GetValue(HKEY folder, const std::wstring& field,
-                  DWORD& value) const;
-
-    std::wstring m_registryFolder;
     DWORD m_version;
 };
