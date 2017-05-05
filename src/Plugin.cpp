@@ -1,6 +1,7 @@
 #include <iostream> // debug output
 #include <codecvt>
 #include <locale>
+#include "Configuration.h"
 #include "gvfsdlg.h"
 #include "LngStringIDs.h"
 #include "MountPointStorage.h"
@@ -56,6 +57,8 @@ void Plugin::setStartupInfo(const PluginStartupInfo* psi)
     m_registryRoot.append(WGOOD_SLASH);
     m_registryRoot.append(MACRO_TEXT(PLUGIN_NAME));
 
+    // load configuration from registry
+    Configuration::Instance(m_registryRoot);
     // load mount points from registry
     MountPointStorage storage(m_registryRoot);
     storage.LoadAll(m_mountPoints);
@@ -63,19 +66,23 @@ void Plugin::setStartupInfo(const PluginStartupInfo* psi)
 
 void Plugin::exitFar()
 {
-    // unmount all VFS, mounted in current session
-    for (auto& mntPoint : m_mountPoints)
+    if (Configuration::Instance()->unmountAtExit())
     {
-        if (mntPoint.second.isMounted())
-            try
-            {
-                mntPoint.second.unmount();
-            }
-            catch (const GvfsServiceException& error)
-            {
-                // ignore error here
-            }
+        // unmount all VFS, mounted in current session
+        for (auto& mntPoint : m_mountPoints)
+        {
+            if (mntPoint.second.isMounted())
+                try
+                {
+                    mntPoint.second.unmount();
+                }
+                catch (const GvfsServiceException& error)
+                {
+                    // ignore error here
+                }
+        }
     }
+    Configuration::Instance()->save();
 }
 
 void Plugin::getPluginInfo(PluginInfo* info)

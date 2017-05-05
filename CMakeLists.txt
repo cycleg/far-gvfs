@@ -1,6 +1,7 @@
 project(gvfspanel)
 
 set(HEADERS
+    src/Configuration.h
     src/gvfsdlg.h
     src/GvfsService.h
     src/GvfsServiceException.h
@@ -12,6 +13,7 @@ set(HEADERS
 )
 
 set(SOURCES
+    src/Configuration.cpp
     src/gvfsdlg.cpp
     src/GvfsService.cpp
     src/KeyBarTitlesHelper.cpp

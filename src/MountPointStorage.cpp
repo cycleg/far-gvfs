@@ -342,7 +342,7 @@ bool MountPointStorage::Load(MountPoint& point) const
 }
 
 bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
-                                  const std::vector<BYTE>& value) const
+                                 const std::vector<BYTE>& value) const
 {
   if (!folder || field.empty()) return false;
   LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_BINARY,
@@ -351,7 +351,7 @@ bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
 }
 
 bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
-                                  const std::wstring& value) const
+                                 const std::wstring& value) const
 {
   if (!folder || field.empty()) return false;
   std::string buf = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(value);
@@ -361,7 +361,7 @@ bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
 }
 
 bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
-                                  const DWORD value) const
+                                 const DWORD value) const
 {
   if (!folder || field.empty()) return false;
   LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_DWORD,
@@ -370,7 +370,7 @@ bool MountPointStorage::SetValue(HKEY folder, const std::wstring& field,
 }
 
 bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
-                                  std::vector<BYTE>& value) const
+                                 std::vector<BYTE>& value) const
 {
   value.clear();
   if (!folder || field.empty()) return false;
@@ -399,7 +399,7 @@ bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
 }
 
 bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
-                                  std::wstring& value) const
+                                 std::wstring& value) const
 {
   value.clear();
   if (!folder || field.empty()) return false;
@@ -428,7 +428,7 @@ bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
 }
 
 bool MountPointStorage::GetValue(HKEY folder, const std::wstring& field,
-                                  DWORD& value) const
+                                 DWORD& value) const
 {
   if (!folder || field.empty()) return false;
   DWORD Type, size = sizeof(DWORD);

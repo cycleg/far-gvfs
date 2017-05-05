@@ -42,17 +42,17 @@ class MountPointStorage
     bool Load(MountPoint& point) const;
 
     bool SetValue(HKEY folder, const std::wstring& field,
-                   const std::vector<BYTE>& value) const;
+                  const std::vector<BYTE>& value) const;
     bool SetValue(HKEY folder, const std::wstring& field,
-                   const std::wstring& value) const;
+                  const std::wstring& value) const;
     bool SetValue(HKEY folder, const std::wstring& field,
-                   const DWORD value) const;
+                  const DWORD value) const;
     bool GetValue(HKEY folder, const std::wstring& field,
-                   std::vector<BYTE>& value) const;
+                  std::vector<BYTE>& value) const;
     bool GetValue(HKEY folder, const std::wstring& field,
-                   std::wstring& value) const;
+                  std::wstring& value) const;
     bool GetValue(HKEY folder, const std::wstring& field,
-                   DWORD& value) const;
+                  DWORD& value) const;
 
     std::wstring m_registryFolder;
     DWORD m_version;
