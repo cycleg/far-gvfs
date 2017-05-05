@@ -5,23 +5,24 @@
 "Error"
 "Warning"
 
-"Gvfs panel"
-" %sGvfs panel [%d] "
+"GVFS panel"
+" %sGVFS panel [%d] "
 
-"gvfs"
+"GVFS"
 
 "Remove"
 "Switch"
 "SavLst"
 "Goto"
 
-"Updating Gvfs panel contents"
-"Sending files to Gvfs panel"
+"Updating GVFS panel contents"
+"Sending files to GVFS panel"
 
 "Total files:"
-"Available Gvfs panels"
+"Available GVFS panels"
 
-"Gvfs panel"
+"GVFS panel"
+"Unmount resources at FAR exit"
 "Add to &Disks menu"
 "Disks menu &hotkey ('1'-'9'). Leave empty to autoassign"
 "Add to &Plugins menu"

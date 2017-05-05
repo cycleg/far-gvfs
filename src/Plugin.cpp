@@ -82,7 +82,6 @@ void Plugin::exitFar()
                 }
         }
     }
-    Configuration::Instance()->save();
 }
 
 void Plugin::getPluginInfo(PluginInfo* info)
@@ -111,7 +110,9 @@ int Plugin::configure(int item)
 {
     UNUSED(item)
 
-    return FALSE;
+    bool ret = ConfigurationEditDlg(m_pPsi);
+    if (ret) Configuration::Instance()->save();
+    return ret;
 }
 
 HANDLE Plugin::openPlugin(int openFrom, intptr_t item)

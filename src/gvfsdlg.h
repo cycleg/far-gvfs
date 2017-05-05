@@ -27,3 +27,4 @@ struct InitDialogItem
 
 bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint);
 bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint);
+bool ConfigurationEditDlg(PluginStartupInfo &info);

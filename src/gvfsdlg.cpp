@@ -1,9 +1,10 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "plugin.hpp"
+#include "Configuration.h"
 #include "LngStringIDs.h"
 #include "MountPoint.h"
+#include "plugin.hpp"
 #include "gvfsdlg.h"
 
 #define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, item, 0))
@@ -203,5 +204,42 @@ bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint)
         return false;
     }
     mountPoint.setPassword(l_password);
+    return true;
+}
+
+bool ConfigurationEditDlg(PluginStartupInfo &info)
+{
+    const int DIALOG_WIDTH = 50;
+    const int DIALOG_HEIGHT = 7;
+    std::vector<InitDialogItem> initItems = {
+        { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
+          MConfigTitle, L"", 0 },
+
+        { DI_CHECKBOX, 5, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
+          0, 0, MConfigUnmountAtExit, L"", 0 },
+
+        { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 1,
+          MOk, L"", 0 },
+        { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 0,
+          MCancel, L"", 0 }
+    };
+    std::vector<FarDialogItem> dialogItems;
+    InitDialogItems(info, initItems, dialogItems);
+    startupInfo = &info;
+
+    HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
+                                  DIALOG_HEIGHT, L"Config", dialogItems.data(),
+                                  dialogItems.size(), 0, 0, NULL, 0);
+    int ret = info.DialogRun(hDlg);
+    // get user input
+    bool l_unmountAtExit = DLG_GET_CHECKBOX(info, hDlg, 1);
+    info.DialogFree(hDlg);
+    startupInfo = nullptr;
+    // check user input
+    if ((ret == -1) || (ret == int(initItems.size()) - 1))
+    {
+        return false;
+    }
+    Configuration::Instance()->setUnmountAtExit(l_unmountAtExit);
     return true;
 }

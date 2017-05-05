@@ -24,6 +24,7 @@ enum
   MSwitchMenuTitle,
 
   MConfigTitle,
+  MConfigUnmountAtExit,
   MConfigAddToDisksMenu,
   MConfigDisksMenuDigit,
   MConfigAddToPluginsMenu,
