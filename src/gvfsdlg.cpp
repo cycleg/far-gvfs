@@ -9,11 +9,12 @@
 
 #define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, item, 0))
 #define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, item, 0) == BSTATE_CHECKED)
+#define DLG_GET_LISTBOXPOS(info, hDlg, item) info.SendDlgMessage(hDlg, DM_LISTGETCURPOS, item, 0)
 
 // for DlgProc functions
 PluginStartupInfo* startupInfo = nullptr;
 
-void InitDialogItems(PluginStartupInfo &info,
+void InitDialogItems(PluginStartupInfo& info,
                      const std::vector<InitDialogItem>& initItems,
                      std::vector<FarDialogItem>& dlgItems)
 {
@@ -31,6 +32,9 @@ void InitDialogItems(PluginStartupInfo &info,
         {
             case DI_CHECKBOX:
                 farDlgItem.Selected = item.Selected;
+                break;
+            case DI_LISTBOX:
+                farDlgItem.ListItems = item.ListItems;
                 break;
             default:
                 farDlgItem.Reserved = item.Reserved;
@@ -80,32 +84,32 @@ LONG_PTR WINAPI EditResourceDlgProc(HANDLE hDlg, int msg, int param1, LONG_PTR p
     return startupInfo->DefDlgProc(hDlg, msg, param1, param2);
 }
 
-bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
+bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
 {
     const int DIALOG_WIDTH = 68;
     const int DIALOG_HEIGHT = 13;
     std::vector<InitDialogItem> initItems = {
-        { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
+        { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
           MResourceTitle, L"", 0 },
 
-        { DI_TEXT, 5, 2, 0, 2, 0, 0, 0, 0,
+        { DI_TEXT, 4, 2, 0, 2, 0, 0, 0, 0,
           MResourcePath, L"", 0 },
-        { DI_EDIT, 5, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
+        { DI_EDIT, 4, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
           -1, mountPoint.getResPath().c_str(), 0 },
 
-        { DI_TEXT, 5, 4, 0, 4, 0, 0, 0, 0,
+        { DI_TEXT, 4, 4, 0, 4, 0, 0, 0, 0,
           MUser, L"", 0 },
-        { DI_EDIT, 5, 5, DIALOG_WIDTH - 5, 5, 1, 0, 0, 0,
+        { DI_EDIT, 4, 5, DIALOG_WIDTH - 5, 5, 1, 0, 0, 0,
           -1, mountPoint.getUser().c_str(), 0 },
 
-        { DI_TEXT, 5, 6, 0, 6, 0, 0,
+        { DI_TEXT, 4, 6, 0, 6, 0, 0,
           mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0,
           MPassword, L"", 0 },
-        { DI_PSWEDIT, 5, 7, DIALOG_WIDTH - 5, 7, 1, 0,
+        { DI_PSWEDIT, 4, 7, DIALOG_WIDTH - 5, 7, 1, 0,
           mountPoint.getAskPassword() ? DIF_DISABLE : 0, 0, -1,
           mountPoint.getPassword().c_str(), 0 },
 
-        { DI_CHECKBOX, 5, 8, 0, 8, 0, mountPoint.getAskPassword(), 0, 0,
+        { DI_CHECKBOX, 4, 8, 0, 8, 0, mountPoint.getAskPassword(), 0, 0,
           MAskPasswordEveryTime, L"", 0 },
 
         { DI_BUTTON, 0, 10, 0, 10, 0, 0, DIF_CENTERGROUP, 1,
@@ -168,17 +172,17 @@ bool EditResourceDlg(PluginStartupInfo &info, MountPoint& mountPoint)
     return true;
 }
 
-bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint)
+bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint)
 {
     const int DIALOG_WIDTH = 48;
     const int DIALOG_HEIGHT = 7;
     std::vector<InitDialogItem> initItems = {
-        { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
+        { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
           MResourceMount, L"", 0 },
 
-        { DI_TEXT, 5, 2, 0, 2, 0, 0, 0, 0,
+        { DI_TEXT, 4, 2, 0, 2, 0, 0, 0, 0,
           MPassword, L"", 0 },
-        { DI_PSWEDIT, 5, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
+        { DI_PSWEDIT, 4, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
           -1, L"", 0 },
 
         { DI_BUTTON, 0, 5, 0, 5, 0, 0, DIF_CENTERGROUP, 1,
@@ -207,15 +211,15 @@ bool AskPasswordDlg(PluginStartupInfo &info, MountPoint& mountPoint)
     return true;
 }
 
-bool ConfigurationEditDlg(PluginStartupInfo &info)
+bool ConfigurationEditDlg(PluginStartupInfo& info)
 {
     const int DIALOG_WIDTH = 50;
     const int DIALOG_HEIGHT = 7;
     std::vector<InitDialogItem> initItems = {
-        { DI_DOUBLEBOX, 3, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
+        { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
           MConfigTitle, L"", 0 },
 
-        { DI_CHECKBOX, 5, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
+        { DI_CHECKBOX, 4, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
           0, 0, MConfigUnmountAtExit, L"", 0 },
 
         { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 1,
@@ -241,5 +245,71 @@ bool ConfigurationEditDlg(PluginStartupInfo &info)
         return false;
     }
     Configuration::Instance()->setUnmountAtExit(l_unmountAtExit);
+    return true;
+}
+
+bool AskQuestionDlg(PluginStartupInfo& info,
+                    const std::vector<std::wstring>& message,
+                    const std::vector<std::wstring>& choices,
+                    unsigned int& choice)
+{
+    const int DIALOG_WIDTH = 78;
+    int DIALOG_HEIGHT = 6 + message.size() - 1 + 1 + 2; // (1 + 1) * 2 + 2
+    std::vector<InitDialogItem> initItems = {
+        { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
+          -1, message[0], 0 },
+
+        { DI_BUTTON, 0, int(message.size() + 1), 0, int(message.size() + 1),
+          0, 0, DIF_CENTERGROUP, 1, MOk, L"", 0 },
+        { DI_BUTTON, 0, int(message.size() + 1), 0, int(message.size() + 1),
+          0, 0, DIF_CENTERGROUP, 0, MCancel, L"", 0 }
+    };
+    // add message lines to dialog
+    std::vector<InitDialogItem>::iterator pos = initItems.begin();
+    ++pos;
+    for (unsigned int i = 1; i < message.size(); i++)
+    {
+        InitDialogItem item = {
+            DI_TEXT, 4, int(1 + i), 0, int(1 + i), 0, 0, 0, 0, -1,
+            message[i], 0
+        };
+        pos = initItems.insert(pos, item);
+        ++pos;
+    }
+    // add choices list
+    std::vector<FarListItem> choicesList;
+    for (unsigned int i = 0; i < choices.size(); i++)
+    {
+        FarListItem item = {
+          ((i == choice) ? LIF_SELECTED : 0), choices[i].c_str(), { 0 }
+        };
+        choicesList.push_back(item);
+    }
+    FarList listInfo = { int(choicesList.size()), choicesList.data() };
+    {
+        InitDialogItem item = {
+             DI_LISTBOX, 4, int(message.size()), 0, int(message.size()),
+             0, 0, 0, 0, -1, L"", 0
+        };
+        item.ListItems = &listInfo;
+        pos = initItems.insert(pos, item);
+    }
+    ++pos; // for future use
+    std::vector<FarDialogItem> dialogItems;
+    InitDialogItems(info, initItems, dialogItems);
+    startupInfo = &info;
+    HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
+                                  DIALOG_HEIGHT, L"Config", dialogItems.data(),
+                                  dialogItems.size(), 0, 0, NULL, 0);
+    int ret = info.DialogRun(hDlg);
+    // get user input
+    choice = DLG_GET_LISTBOXPOS(info, hDlg, message.size());
+    info.DialogFree(hDlg);
+    startupInfo = nullptr;
+    // check user input
+    if ((ret == -1) || (ret == int(initItems.size()) - 1))
+    {
+        return false;
+    }
     return true;
 }
