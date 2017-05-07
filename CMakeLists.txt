@@ -11,6 +11,7 @@ set(HEADERS
     src/MountPointStorage.h
     src/Plugin.h
     src/RegistryStorage.h
+    src/TextFormatter.h
 )
 
 set(SOURCES
@@ -21,8 +22,9 @@ set(SOURCES
     src/MountPoint.cpp
     src/MountPointStorage.cpp
     src/Plugin.cpp
-    src/PluginMain.cpp
     src/RegistryStorage.cpp
+    src/TextFormatter.cpp
+    src/PluginMain.cpp
 )
 
 find_package(PkgConfig REQUIRED MODULE)
