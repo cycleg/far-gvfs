@@ -3,6 +3,8 @@
 #include <string>
 #include "GvfsServiceException.h"
 
+class GvfsService;
+
 class MountPointStorage;
 
 class MountPoint
@@ -34,14 +36,17 @@ class MountPoint
     inline const std::wstring& getPassword() const { return m_password; }
     inline bool getAskPassword() const { return m_askPassword; }
 
-    inline void setResPath(const std::wstring& s) { m_resPath = s; }
-    inline void setUser(const std::wstring& s) { m_user = s; }
-    inline void setPassword(const std::wstring& s) { m_password = s; }
-    inline void setAskPassword(bool ask) { m_askPassword = ask; }
+    inline MountPoint& setResPath(const std::wstring& s)
+    { m_resPath = s; return *this; }
+    inline MountPoint& setUser(const std::wstring& s) { m_user = s; return *this; }
+    inline MountPoint& setPassword(const std::wstring& s)
+    { m_password = s; return *this; }
+    inline MountPoint& setAskPassword(bool ask)
+    { m_askPassword = ask; return *this; }
 
-    bool mount() throw(GvfsServiceException);
-    bool unmount() throw(GvfsServiceException);
-    void mountCheck();
+    bool mount(GvfsService* service) throw(GvfsServiceException);
+    bool unmount(GvfsService* service) throw(GvfsServiceException);
+    void mountCheck(GvfsService* service);
 
   private:
     bool m_bMounted;

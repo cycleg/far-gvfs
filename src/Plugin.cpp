@@ -5,6 +5,7 @@
 #include "gvfsdlg.h"
 #include "LngStringIDs.h"
 #include "MountPointStorage.h"
+#include "GvfsService.h"
 #include "Plugin.h"
 
 #define UNUSED(x) (void)x;
@@ -74,7 +75,8 @@ void Plugin::exitFar()
             if (mntPoint.second.isMounted())
                 try
                 {
-                    mntPoint.second.unmount();
+                    GvfsService service;
+                    mntPoint.second.unmount(&service);
                 }
                 catch (const GvfsServiceException& error)
                 {
@@ -303,13 +305,14 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                 hScreen = m_pPsi.SaveScreen(0, 0, -1, -1);
                 try
                 {
+                    GvfsService service;
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceMount);
                     msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
                     m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems,
                                    ARRAYSIZE(msgItems), 0);
                     // для сообщения об ошибке
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MMountError);
-                    isMount = it->second.mount();
+                    isMount = it->second.mount(&service);
                 }
                 catch (const GvfsServiceException& error)
                 {
@@ -466,7 +469,8 @@ void Plugin::unmountResource(MountPoint& point)
     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MUnmountError);
     try
     {
-        point.unmount();
+        GvfsService service;
+        point.unmount(&service);
     }
     catch (const GvfsServiceException& error)
     {
@@ -506,7 +510,8 @@ void Plugin::checkResourcesStatus()
                    ARRAYSIZE(msgItems), 0);
     for (auto& mountPoint : m_mountPoints)
     {
-        mountPoint.second.mountCheck();
+        GvfsService service;
+        mountPoint.second.mountCheck(&service);
     }
     m_pPsi.RestoreScreen(hScreen);
 }
