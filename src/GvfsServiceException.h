@@ -2,6 +2,11 @@
 
 #include <glibmm/error.h>
 
+/// 
+/// Класс-исключение для ошибок GvfsService
+
+/// @author cycleg
+///
 class GvfsServiceException: public Glib::Error
 {
   public:
