@@ -8,6 +8,9 @@
 #include "KeyBarTitlesHelper.h"
 #include "MountPoint.h"
 
+///
+/// Параметры FAR-плагина
+///
 struct Options
 {
     bool AddToDisksMenu;
@@ -30,6 +33,13 @@ struct Options
     wchar_t Prefix[16];
 };
 
+/// 
+/// Класс-реализация плагина.
+
+/// Реализован как синглетон.
+/// 
+/// @author cycleg
+///
 class Plugin
 {
 public:
@@ -60,17 +70,42 @@ public:
     int processEditorInput(const INPUT_RECORD* Rec);
 
 private:
+    ///
+    /// Очистить набор отображаемых в панели элементов.
+    ///
     void clearPanelItems();
+    ///
+    /// Заполнить набор отображаемых в панели элементов данными из набора
+    /// ресурсов.
+    ///
     void updatePanelItems();
+    ///
+    /// Отсоединить указанный ресурс.
+    ///
+    /// @param point Класс-описание ресурса
+    ///
     void unmountResource(MountPoint& point);
+    ///
+    /// Извлечь выбранный элемент панели.
+    ///
+    /// @param Plugin Указатель на структуру плагина в FAR
+    /// @return указатель на выбранный лемент или nullptr, если элементов нет
+    ///
     PluginPanelItem* getPanelCurrentItem(HANDLE Plugin);
+    ///
+    /// Преверить статус соединения со всеми ресурсами.
+    ///
     void checkResourcesStatus();
 
     Options Opt;
-    KeyBarTitlesHelper m_keyBar;
+    KeyBarTitlesHelper m_keyBar; ///< элемент управления посказками о
+                                 ///< функциональных кнопках клавиатуры
     PluginStartupInfo m_pPsi;
-    std::wstring m_registryRoot;
-    std::vector<PluginPanelItem> m_items;
-    std::map<std::wstring, MountPoint> m_mountPoints;
-    bool m_firstDemand; //< first demand to panel flag
+    std::wstring m_registryRoot; ///< имя корневой папки плагина в реестре FAR
+    std::vector<PluginPanelItem> m_items; ///< набор элементов, отображаемых в
+                                          ///< панели плагина
+    std::map<std::wstring, MountPoint> m_mountPoints; ///< Набор ресурсов для
+                                                      ///< монтирования. Ключ -
+                                                      ///< URL ресурса.
+    bool m_firstDemand; ///< флаг того, что панель ранее не открывали
 };
