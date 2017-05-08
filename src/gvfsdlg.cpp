@@ -9,7 +9,7 @@
 
 #define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, item, 0))
 #define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, item, 0) == BSTATE_CHECKED)
-#define DLG_GET_LISTBOXPOS(info, hDlg, item) info.SendDlgMessage(hDlg, DM_LISTGETCURPOS, item, 0)
+#define DLG_GET_COMBOBOXPOS(info, hDlg, item) info.SendDlgMessage(hDlg, DM_LISTGETCURPOS, item, 0)
 
 // for DlgProc functions
 PluginStartupInfo* startupInfo = nullptr;
@@ -33,7 +33,7 @@ void InitDialogItems(PluginStartupInfo& info,
             case DI_CHECKBOX:
                 farDlgItem.Selected = item.Selected;
                 break;
-            case DI_LISTBOX:
+            case DI_COMBOBOX:
                 farDlgItem.ListItems = item.ListItems;
                 break;
             default:
@@ -254,14 +254,14 @@ bool AskQuestionDlg(PluginStartupInfo& info,
                     unsigned int& choice)
 {
     const int DIALOG_WIDTH = 78;
-    int DIALOG_HEIGHT = 6 + message.size() - 1 + 1 + 2; // (1 + 1) * 2 + 2
+    int DIALOG_HEIGHT = 6 + message.size(); // (1 + 1) * 2 + 2
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
           -1, message[0], 0 },
 
-        { DI_BUTTON, 0, int(message.size() + 1), 0, int(message.size() + 1),
+        { DI_BUTTON, 0, int(message.size() + 3), 0, int(message.size() + 1),
           0, 0, DIF_CENTERGROUP, 1, MOk, L"", 0 },
-        { DI_BUTTON, 0, int(message.size() + 1), 0, int(message.size() + 1),
+        { DI_BUTTON, 0, int(message.size() + 3), 0, int(message.size() + 1),
           0, 0, DIF_CENTERGROUP, 0, MCancel, L"", 0 }
     };
     // add message lines to dialog
@@ -278,18 +278,28 @@ bool AskQuestionDlg(PluginStartupInfo& info,
     }
     // add choices list
     std::vector<FarListItem> choicesList;
+    unsigned int choicesWidth = 0;
     for (unsigned int i = 0; i < choices.size(); i++)
     {
         FarListItem item = {
           ((i == choice) ? LIF_SELECTED : 0), choices[i].c_str(), { 0 }
         };
+        choicesWidth = (choicesWidth < choices[i].size()) ?
+                       choices[i].size() : choicesWidth;
         choicesList.push_back(item);
+    }
+    if (choicesWidth > DIALOG_WIDTH - 8 - 1)
+    {
+        // 3 symbols - frame, 1 symbol - pad, 1 - arrow
+        choicesWidth = DIALOG_WIDTH - 8 - 1;
     }
     FarList listInfo = { int(choicesList.size()), choicesList.data() };
     {
         InitDialogItem item = {
-             DI_LISTBOX, 4, int(message.size()), 0, int(message.size()),
-             0, 0, 0, 0, -1, L"", 0
+             DI_COMBOBOX,
+             4, int(message.size() + 1),
+             int(4 + choicesWidth), int(message.size() + 1),
+             0, 0, DIF_DROPDOWNLIST | DIF_SHOWAMPERSAND, 0, -1, L"", 0
         };
         item.ListItems = &listInfo;
         pos = initItems.insert(pos, item);
@@ -303,7 +313,7 @@ bool AskQuestionDlg(PluginStartupInfo& info,
                                   dialogItems.size(), 0, 0, NULL, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
-    choice = DLG_GET_LISTBOXPOS(info, hDlg, message.size());
+    choice = DLG_GET_COMBOBOXPOS(info, hDlg, message.size());
     info.DialogFree(hDlg);
     startupInfo = nullptr;
     // check user input

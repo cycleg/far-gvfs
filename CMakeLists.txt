@@ -12,6 +12,7 @@ set(HEADERS
     src/Plugin.h
     src/RegistryStorage.h
     src/TextFormatter.h
+    src/UiCallbacks.h
 )
 
 set(SOURCES
@@ -24,6 +25,7 @@ set(SOURCES
     src/Plugin.cpp
     src/RegistryStorage.cpp
     src/TextFormatter.cpp
+    src/UiCallbacks.cpp
     src/PluginMain.cpp
 )
 

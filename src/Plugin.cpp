@@ -3,9 +3,10 @@
 #include <locale>
 #include "Configuration.h"
 #include "gvfsdlg.h"
+#include "GvfsService.h"
 #include "LngStringIDs.h"
 #include "MountPointStorage.h"
-#include "GvfsService.h"
+#include "UiCallbacks.h"
 #include "Plugin.h"
 
 #define UNUSED(x) (void)x;
@@ -305,7 +306,8 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                 hScreen = m_pPsi.SaveScreen(0, 0, -1, -1);
                 try
                 {
-                    GvfsService service;
+                    UiCallbacks callbacks(m_pPsi);
+                    GvfsService service(&callbacks);
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceMount);
                     msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
                     m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems,

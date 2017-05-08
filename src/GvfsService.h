@@ -2,15 +2,18 @@
 
 #include <memory>
 #include <string>
+#include <thread>
 #include <gtkmm.h>
 #include "GvfsServiceException.h"
+
+class UiCallbacks;
 
 // Класс не потокобезопасный из-за уродливого "объезда" ошибки в glibmm
 // v2.50.0. Подробнее см. в GvfsService.cpp.
 class GvfsService
 {
 public:
-    GvfsService();
+    GvfsService(UiCallbacks* uic = nullptr);
 
     inline const std::string& getMountName() const { return m_mountName; }
     inline const std::string& getMountPath() const { return m_mountPath; }
@@ -25,14 +28,17 @@ private:
     void on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                          const Glib::ustring& msg,
                          const Glib::StringArrayHandle& choices);
-#endif
-    void on_ask_question(GMountOperation* op, char* message, char** choices,
-                         gpointer user_data);
     void on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_operation,
-                         bool l_anonymous, const Glib::ustring& msg,
+                         const Glib::ustring& msg,
                          const Glib::ustring& defaultUser,
                          const Glib::ustring& defaultdomain,
                          Gio::AskPasswordFlags flags);
+#endif
+    void on_ask_question(GMountOperation* op, char* message, char** choices,
+                         gpointer user_data);
+    void on_ask_password(GMountOperation* op, const char* message,
+                         const char* default_user, const char* default_domain,
+                         GAskPasswordFlags flags);
     void on_aborted(Glib::RefPtr<Gio::MountOperation>& mount_operation);
 
     void mount_cb(Glib::RefPtr<Gio::AsyncResult>& result);
@@ -45,4 +51,5 @@ private:
     Glib::RefPtr<Gio::File> m_file;
     Glib::RefPtr<Glib::MainLoop> m_mainLoop;
     std::shared_ptr<GvfsServiceException> m_exception;
+    UiCallbacks* m_uiCallbacks;
 };

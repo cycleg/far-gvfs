@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 #include <windows.h>
-#include "plugin.hpp"
+#include <plugin.hpp>
 #include "KeyBarTitlesHelper.h"
 #include "MountPoint.h"
 

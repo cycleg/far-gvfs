@@ -183,12 +183,14 @@ void TextFormatter::SplitLines(const std::wstring& text,
   {
     // only empty line(s)
     if (m_ignoreEmptyLines) return;
-    for (int i = 0; i < text.size(); i++) lines.push_back(std::wstring());
+    for (unsigned int i = 0; i < text.size(); i++)
+      lines.push_back(std::wstring());
   }
   if ((pos1 > 0) && !m_ignoreEmptyLines)
   {
     // leading empty lines
-    for (int i = 0; i < pos1; i++) lines.push_back(std::wstring());
+    for (unsigned int i = 0; i < pos1; i++)
+      lines.push_back(std::wstring());
   }
   while (pos2 != std::wstring::npos)
   {

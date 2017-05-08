@@ -1,5 +1,6 @@
 #include <iostream>
 #include <functional>
+#include "UiCallbacks.h"
 #include "GvfsService.h"
 
 // "Объезд" ошибки в glibmm v2.50.0: проблемы с управлением памятью из-за
@@ -8,16 +9,20 @@
 // и глобальную переменную ask_question_callback. См. GvfsService::mount() и
 // слот GvfsService::on_ask_question().
 //
+// Объезд с ask_password пришлось сделать после введения
+// g_main_context_push_thread_default(). Без него приложение аварийно
+// завершалось.
+//
 // TODO
 // В старших версиях glibmm тип Glib::StringArrayHandle полностью заменен на
 // std::vector<Glib::ustring>. После обновления версии в Debian можно будет
 // проверить работоспособность Gio::MountOperation, а затем перейти к условной
-// компиляции GvfsService в зависимости от версии glibmm
+// компиляции GvfsService в зависимости от версии glibmm.
+
 namespace {
 
 std::function<void(GMountOperation*, char*, char**, gpointer)>
     ask_question_callback;
-
 extern "C" void ask_question_wrapper(GMountOperation* op,
                                      char* message, char** choices,
                                      gpointer user_data)
@@ -25,10 +30,25 @@ extern "C" void ask_question_wrapper(GMountOperation* op,
     ask_question_callback(op, message, choices, user_data);
 }
 
+
+std::function<void(GMountOperation* op, const char* message,
+                   const char* default_user, const char* default_domain,
+                   GAskPasswordFlags flags)>
+    ask_password_callback;
+extern "C" void ask_password_wrapper(GMountOperation* op,
+                                     const char* message,
+                                     const char* default_user,
+                                     const char* default_domain,
+                                     GAskPasswordFlags flags)
+{
+    ask_password_callback(op, message, default_user, default_domain, flags);
+}
+
 } // anonymous namespace
 
-GvfsService::GvfsService() :
-    m_mountCount(0)
+GvfsService::GvfsService(UiCallbacks* uic) :
+    m_mountCount(0),
+    m_uiCallbacks(uic)
 {
 }
 
@@ -45,12 +65,14 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
 
     Gio::init();
 
-    m_mainLoop = Glib::MainLoop::create(false);
+    Glib::RefPtr< Glib::MainContext > main_context = Glib::MainContext::create();
+    // Чтобы контекст главного цикла Glib::MainLoop не отслеживал ничего,
+    // кроме операций с ресурсом! Иначе блокируется пользовательский ввод Far.
+    g_main_context_push_thread_default(main_context->gobj());
+    m_mainLoop = Glib::MainLoop::create(main_context, false);
 
     m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
-
-    bool l_anonymous = userName.empty() && password.empty();
 
     if (!userName.empty()) mount_operation->set_username(userName);
     if (!password.empty()) mount_operation->set_password(password);
@@ -60,15 +82,19 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
     mount_operation->signal_ask_question().connect(
         std::bind(&GvfsService::on_ask_question, this, mount_operation, _1, _2)
     );
+    mount_operation->signal_ask_password().connect(
+        std::bind(&GvfsService::on_ask_password, this, mount_operation, _1, _2,
+                  _3, _4)
+    );
 #endif
     ask_question_callback = std::bind(&GvfsService::on_ask_question, this,
                                       _1, _2, _3, _4);
     g_signal_connect(mount_operation->gobj(), "ask_question",
                      G_CALLBACK(ask_question_wrapper), nullptr);
-    mount_operation->signal_ask_password().connect(
-        std::bind(&GvfsService::on_ask_password, this, mount_operation, l_anonymous,
-                  _1, _2, _3, _4)
-    );
+    ask_password_callback = std::bind(&GvfsService::on_ask_password, this,
+                                      _1, _2, _3, _4, _5);
+    g_signal_connect(mount_operation->gobj(), "ask_password",
+                     G_CALLBACK(ask_password_wrapper), nullptr);
     mount_operation->signal_aborted().connect(
         std::bind(&GvfsService::on_aborted, this, mount_operation)
     );
@@ -88,6 +114,9 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         {
             m_mainLoop->run();
         }
+        // вероятно, избыточная операция, но без нее Glib выдает assert,
+        // поэтому делаем
+        g_main_context_pop_thread_default(main_context->gobj());
         m_mountName = m_file->find_enclosing_mount()->get_name();
         m_mountPath = m_file->find_enclosing_mount()->get_default_location()->get_path();
         std::cout << "GvfsService::mount() name: " << m_mountName << std::endl;
@@ -96,6 +125,8 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
     }
     catch (const Glib::Error& ex)
     {
+        // А здесь контекст потока восстанавливать не получается, и снова
+        // из-за assert в Glib. Сплошные загадки...
         std::cerr << "GvfsService::mount() Glib::Error: " << ex.what().raw() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
         if (m_exception.get() == nullptr)
@@ -210,8 +241,6 @@ std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std:
     return (l_mount.operator->() != nullptr);
 }
 
-// TODO
-// Реализовать выбор варианта ответа пользователем.
 #if 0
 void GvfsService::on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                                   const Glib::ustring& msg,
@@ -221,28 +250,22 @@ std::cerr << "on signal_ask_question: " << msg.raw() << std::endl;
 std::cerr << "choices:" << std::endl;
 int i = 0;
 for (const auto& choice : choices) std::cerr << i++ << " " << choice.raw() << std::endl;
-    mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
-}
-#endif
-void GvfsService::on_ask_question(GMountOperation* op, char* message,
-                                  char** choices, gpointer user_data)
-{
-    (void)user_data;
-std::cerr << "on signal_ask_question: " << message << std::endl;
-std::cerr << "choices:" << std::endl;
-int i = 0;
-char** choice = choices;
-while (*choice)
-{
-std::cerr << i << " " << *choice << std::endl;
-i++;
-choice++;
-}
-    g_mount_operation_reply (op, G_MOUNT_OPERATION_HANDLED);
+    if (m_uiCallbacks)
+        {
+            int answer = mount_operation->get_choice();
+            m_uiCallbacks->onAskQuestion(message, choices, answer);
+            if (answer != -1)
+                {
+                    mount_operation->set_choice(answer);
+                    mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
+                }
+                else mount_operation->reply(Gio::MOUNT_OPERATION_ABORTED);
+        }
+        else mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
 }
 
 void GvfsService::on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_operation,
-                                  bool l_anonymous, const Glib::ustring& msg,
+                                  const Glib::ustring& msg,
                                   const Glib::ustring& defaultUser,
                                   const Glib::ustring& defaultdomain,
                                   Gio::AskPasswordFlags flags)
@@ -251,7 +274,9 @@ std::cerr << "Gvfs on signal_ask_password ask password: " << msg.raw() << std::e
           << "Gvfs on signal_ask_password default user: " << defaultUser.raw() << std::endl
           << "Gvfs on signal_ask_password default domain: " << defaultdomain.raw() << std::endl;
 
-    if ((flags & G_ASK_PASSWORD_ANONYMOUS_SUPPORTED) && l_anonymous)
+    if ((flags & G_ASK_PASSWORD_ANONYMOUS_SUPPORTED) &&
+        mount_operation->get_username().empty() &&
+        mount_operation->get_password().empty())
     {
 std::cerr << "Gvfs on signal_ask_password set anonymous" << std::endl;
         mount_operation->set_anonymous(true);
@@ -276,6 +301,53 @@ std::cerr << "Gvfs on signal_ask_password NEED PASSWORD" << std::endl;
         }
     }
     mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
+}
+#endif
+
+void GvfsService::on_ask_question(GMountOperation* op, char* message,
+                                  char** choices, gpointer user_data)
+{
+    (void)user_data;
+std::cerr << "on signal_ask_question: " << message << std::endl;
+std::cerr << "choices:" << std::endl;
+int i = 0;
+char** choice = choices;
+while (*choice)
+{
+std::cerr << i << " " << *choice << std::endl;
+i++;
+choice++;
+}
+    if (m_uiCallbacks)
+        {
+            int answer = g_mount_operation_get_choice(op);
+            m_uiCallbacks->onAskQuestion(message, choices, answer);
+            if (answer != -1)
+                {
+                    g_mount_operation_set_choice(op, answer);
+                    g_mount_operation_reply(op, G_MOUNT_OPERATION_HANDLED);
+                }
+                else g_mount_operation_reply(op, G_MOUNT_OPERATION_ABORTED);
+        }
+        else g_mount_operation_reply(op, G_MOUNT_OPERATION_HANDLED);
+}
+
+void GvfsService::on_ask_password(GMountOperation* op, const char* message,
+                                  const char* default_user,
+                                  const char* default_domain,
+                                  GAskPasswordFlags flags)
+{
+std::cerr << "Gvfs on signal_ask_password ask password: " << message << std::endl
+          << "Gvfs on signal_ask_password default user: " << default_user << std::endl
+          << "Gvfs on signal_ask_password default domain: " << default_domain << std::endl;
+    if ((flags & G_ASK_PASSWORD_ANONYMOUS_SUPPORTED) &&
+        (g_mount_operation_get_username(op) == nullptr) &&
+        (g_mount_operation_get_password(op) == nullptr))
+    {
+std::cerr << "Gvfs on signal_ask_password set anonymous" << std::endl;
+        g_mount_operation_set_anonymous(op, true);
+    }
+    g_mount_operation_reply(op, G_MOUNT_OPERATION_HANDLED);
 }
 
 void GvfsService::on_aborted(Glib::RefPtr<Gio::MountOperation>& mount_operation)
