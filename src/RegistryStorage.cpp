@@ -1,5 +1,4 @@
-#include <codecvt>
-#include <locale>
+#include <utils.h>
 #include "RegistryStorage.h"
 
 bool RegistryStorage::SetValue(HKEY folder, const std::wstring& field,
@@ -15,7 +14,7 @@ bool RegistryStorage::SetValue(HKEY folder, const std::wstring& field,
                                  const std::wstring& value) const
 {
   if (!folder || field.empty()) return false;
-  std::string buf = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(value);
+  std::string buf(StrWide2MB(value));
   LONG res = WINPORT(RegSetValueEx)(folder, field.c_str(), 0, REG_SZ_MB,
                                     (const BYTE*)buf.c_str(), buf.size() + 1);
   return res == ERROR_SUCCESS;
@@ -81,7 +80,7 @@ bool RegistryStorage::GetValue(HKEY folder, const std::wstring& field,
     }
     if (res == ERROR_SUCCESS)
     {
-      value = std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(std::string(buf));
+      MB2Wide(buf, value);
     }
   } while (res == ERROR_MORE_DATA); 
   delete[] buf;

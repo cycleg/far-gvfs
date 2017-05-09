@@ -1,6 +1,5 @@
-#include <locale>
-#include <codecvt>
 #include <openssl/aes.h>
+#include <utils.h>
 #include "Crypto.h"
 
 Crypto::Crypto()
@@ -17,8 +16,7 @@ Crypto::~Crypto()
 
 bool Crypto::init(const std::wstring& keydata)
 {
-  std::string l_keydata = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                          .to_bytes(keydata);
+  std::string l_keydata = StrWide2MB(keydata);
   int i, nrounds = 5;
   BYTE key[32], iv[32];
  

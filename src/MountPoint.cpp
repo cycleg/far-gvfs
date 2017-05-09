@@ -1,6 +1,5 @@
 #include <string>
-#include <locale>
-#include <codecvt>
+#include <utils.h>
 #include "GvfsService.h"
 #include "MountPoint.h"
 
@@ -50,9 +49,9 @@ MountPoint& MountPoint::operator=(const MountPoint& other)
 
 bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
 {
-    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m_resPath);
-    std::string userName = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m_user);
-    std::string password = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m_password);
+    std::string resPath(StrWide2MB(m_resPath));
+    std::string userName(StrWide2MB(m_user));
+    std::string password(StrWide2MB(m_password));
 
     // пароль спрашивают перед монтированием, зачищаем его
     if (m_askPassword) m_password.clear();
@@ -63,10 +62,8 @@ bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
     if (success)
     {
         m_bMounted = true;
-        m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                      .from_bytes(service->getMountName());
-        m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                           .from_bytes(service->getMountPath());
+        StrMB2Wide(service->getMountName(), m_shareName);
+        StrMB2Wide(service->getMountPath(), m_mountPointPath);
     }
     return success;
 }
@@ -75,7 +72,7 @@ bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
 {
     if (!m_bMounted) return true;
 
-    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(this->m_resPath);
+    std::string resPath(StrWide2MB(this->m_resPath));
     if (resPath.empty()) return false;
 
     bool success = false;
@@ -102,16 +99,14 @@ bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
 
 void MountPoint::mountCheck(GvfsService* service)
 {
-    std::string resPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >().to_bytes(m_resPath);
+    std::string resPath(StrWide2MB(m_resPath));
     if (resPath.empty()) return;
 
     if (service->mounted(resPath))
         {
             m_bMounted = true;
-            m_shareName = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                          .from_bytes(service->getMountName());
-            m_mountPointPath = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                               .from_bytes(service->getMountPath());
+            StrMB2Wide(service->getMountName(), m_shareName);
+            StrMB2Wide(service->getMountPath(), m_mountPointPath);
         }
         else
         {
@@ -119,5 +114,4 @@ void MountPoint::mountCheck(GvfsService* service)
             m_shareName.clear();
             m_bMounted = false;
         }
-
 }

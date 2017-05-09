@@ -47,6 +47,7 @@ bool ConfigurationEditDlg(PluginStartupInfo& info);
 /// Ответ на вопрос в ходе монтирования ресурса.
 ///
 bool AskQuestionDlg(PluginStartupInfo& info,
+                    const int DIALOG_WIDTH,
                     const std::vector<std::wstring>& message,
                     const std::vector<std::wstring>& choices,
                     unsigned int& choice);

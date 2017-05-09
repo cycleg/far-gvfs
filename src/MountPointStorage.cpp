@@ -1,7 +1,6 @@
 #include <cstring>
-#include <codecvt>
-#include <locale>
 #include <windows.h>
+#include <utils.h>
 #include <uuid/uuid.h>
 
 #ifdef USE_OPENSSL
@@ -187,7 +186,7 @@ void MountPointStorage::GenerateId(std::wstring& id)
   char* out = new char[UUID_TEXT_SIZE];
   uuid_generate(uuid);
   uuid_unparse(uuid, out);
-  id = std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(out);
+  MB2Wide(out, id);
   delete[] out;
 }
 
@@ -214,8 +213,7 @@ void MountPointStorage::Encrypt(const std::wstring& keydata,
                                 std::vector<BYTE>& out)
 {
   std::vector<BYTE> plain;
-  std::string buf = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-                    .to_bytes(in);
+  std::string buf(StrWide2MB(in));
   Crypto crypto;
   crypto.init(keydata);
   for (const std::string::value_type ch : buf) plain.push_back((BYTE)ch);
@@ -271,8 +269,7 @@ void MountPointStorage::Decrypt(const std::wstring& keydata,
     case 3:
       crypto.decrypt(in, plain);
       for (const BYTE ch : plain) buf.push_back(ch);
-      out = std::wstring_convert<std::codecvt_utf8<wchar_t> >()
-            .from_bytes(buf);
+      StrMB2Wide(buf, out);
       break;
     default:
       break;

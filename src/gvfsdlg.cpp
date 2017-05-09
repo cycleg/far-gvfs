@@ -249,12 +249,14 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
 }
 
 bool AskQuestionDlg(PluginStartupInfo& info,
+                    const int DIALOG_WIDTH,
                     const std::vector<std::wstring>& message,
                     const std::vector<std::wstring>& choices,
                     unsigned int& choice)
 {
-    const int DIALOG_WIDTH = 78;
-    int DIALOG_HEIGHT = 6 + message.size(); // (1 + 1) * 2 + 2
+    // 2 rows - frame, 2 rows - buttons, total: 2 * 2 + 2
+    // first line in message - title
+    int DIALOG_HEIGHT = 6 + message.size();
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
           -1, message[0], 0 },
@@ -279,6 +281,7 @@ bool AskQuestionDlg(PluginStartupInfo& info,
     // add choices list
     std::vector<FarListItem> choicesList;
     unsigned int choicesWidth = 0;
+    // max width limited in UiCallbacks::onAskQuestion()
     for (unsigned int i = 0; i < choices.size(); i++)
     {
         FarListItem item = {
@@ -287,11 +290,6 @@ bool AskQuestionDlg(PluginStartupInfo& info,
         choicesWidth = (choicesWidth < choices[i].size()) ?
                        choices[i].size() : choicesWidth;
         choicesList.push_back(item);
-    }
-    if (choicesWidth > DIALOG_WIDTH - 8 - 1)
-    {
-        // 3 symbols - frame, 1 symbol - pad, 1 - arrow
-        choicesWidth = DIALOG_WIDTH - 8 - 1;
     }
     FarList listInfo = { int(choicesList.size()), choicesList.data() };
     {

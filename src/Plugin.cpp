@@ -1,6 +1,5 @@
 #include <iostream> // debug output
-#include <codecvt>
-#include <locale>
+#include <utils.h>
 #include "Configuration.h"
 #include "gvfsdlg.h"
 #include "GvfsService.h"
@@ -318,8 +317,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                 }
                 catch (const GvfsServiceException& error)
                 {
-                    std::wstring buf =
-                        std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
+                    std::wstring buf(StrMB2Wide(error.what().raw()));
                     msgItems[1] = buf.c_str();
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
                                    NULL, msgItems, ARRAYSIZE(msgItems), 0);
@@ -476,8 +474,7 @@ void Plugin::unmountResource(MountPoint& point)
     }
     catch (const GvfsServiceException& error)
     {
-        std::wstring buf =
-            std::wstring_convert<std::codecvt_utf8<wchar_t> >().from_bytes(error.what().raw());
+        std::wstring buf(StrMB2Wide(error.what().raw()));
         msgItems[1] = buf.c_str();
         m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
                        NULL, msgItems, ARRAYSIZE(msgItems), 0);
