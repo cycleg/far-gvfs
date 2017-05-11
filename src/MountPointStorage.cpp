@@ -64,16 +64,16 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage)
 {
   // не удалось создать хранилище на диске
   if (!valid()) return;
-	HKEY hKey = nullptr;
-	LONG res;
+  HKEY hKey = nullptr;
+  LONG res;
   DWORD index = 0;
   storage.clear();
   if (WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, m_registryFolder.c_str(), 0,
                             KEY_ENUMERATE_SUB_KEYS | KEY_READ, &hKey) != ERROR_SUCCESS)
   {
     // хранилище не доступно
-		return;
-	}
+    return;
+  }
   do
   {
     wchar_t subKey[MAX_PATH];
@@ -125,7 +125,7 @@ bool MountPointStorage::Save(const MountPoint& point)
 {
   // не удалось создать хранилище на диске
   if (!valid()) return false;
-	HKEY hKey = nullptr;
+  HKEY hKey = nullptr;
   LONG res;
   if (m_version < StorageVersion)
   {
@@ -167,7 +167,7 @@ void MountPointStorage::Delete(const MountPoint& point) const
 {
   // no valid storage - nothing to delete
   if (!valid()) return;
-	HKEY hKey = nullptr;
+  HKEY hKey = nullptr;
   std::wstring key = m_registryFolder;
   key.append(WGOOD_SLASH);
   key.append(point.m_storageId);
@@ -281,8 +281,8 @@ bool MountPointStorage::Load(MountPoint& point) const
 {
   // не удалось создать хранилище на диске
   if (!m_version) return false;
-	HKEY hKey = nullptr;
-	LONG res;
+  HKEY hKey = nullptr;
+  LONG res;
   std::wstring key = m_registryFolder;
   key.append(WGOOD_SLASH);
   key.append(point.m_storageId);
