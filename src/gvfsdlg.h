@@ -10,6 +10,8 @@
 ///
 /// Преобразуется в структуру FarDialogItem.
 ///
+/// @author invy, cycleg
+///
 struct InitDialogItem
 {
     int Type;
@@ -34,17 +36,25 @@ struct InitDialogItem
 ///
 /// Редактирование ресурса для монтирования.
 ///
+/// @author invy, cycleg
+///
 bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint);
 ///
 /// Запрос пароля перед монтированием ресурса.
+///
+/// @author cycleg
 ///
 bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint);
 ///
 /// Редактирование общих настроек плагина.
 ///
+/// @author cycleg
+///
 bool ConfigurationEditDlg(PluginStartupInfo& info);
 ///
 /// Ответ на вопрос в ходе монтирования ресурса.
+///
+/// @author cycleg
 ///
 bool AskQuestionDlg(PluginStartupInfo& info,
                     const int DIALOG_WIDTH,

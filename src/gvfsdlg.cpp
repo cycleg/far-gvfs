@@ -11,9 +11,16 @@
 #define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, item, 0) == BSTATE_CHECKED)
 #define DLG_GET_COMBOBOXPOS(info, hDlg, item) info.SendDlgMessage(hDlg, DM_LISTGETCURPOS, item, 0)
 
+namespace {
+
 // for DlgProc functions
 PluginStartupInfo* startupInfo = nullptr;
 
+} // anonymous namespace
+
+///
+/// @author invy, cycleg
+///
 void InitDialogItems(PluginStartupInfo& info,
                      const std::vector<InitDialogItem>& initItems,
                      std::vector<FarDialogItem>& dlgItems)

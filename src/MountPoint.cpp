@@ -100,18 +100,23 @@ bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
 void MountPoint::mountCheck(GvfsService* service)
 {
     std::string resPath(StrWide2MB(m_resPath));
-    if (resPath.empty()) return;
-
+    if (resPath.empty())
+    {
+        m_mountPointPath.clear();
+        m_shareName.clear();
+        m_bMounted = false;
+        return;
+    }
     if (service->mounted(resPath))
         {
             m_bMounted = true;
-            StrMB2Wide(service->getMountName(), m_shareName);
             StrMB2Wide(service->getMountPath(), m_mountPointPath);
+            StrMB2Wide(service->getMountName(), m_shareName);
         }
         else
         {
-            m_mountPointPath.clear();
             m_shareName.clear();
+            m_mountPointPath.clear();
             m_bMounted = false;
         }
 }

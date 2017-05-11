@@ -34,11 +34,11 @@ struct Options
 };
 
 /// 
-/// Класс-реализация плагина.
+/// Класс-реализация Unicode плагина far2l.
 
 /// Реализован как синглетон.
 /// 
-/// @author cycleg
+/// @author invy, cycleg
 ///
 class Plugin
 {

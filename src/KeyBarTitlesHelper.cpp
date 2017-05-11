@@ -26,6 +26,7 @@ KeyBarTitlesHelper::~KeyBarTitlesHelper()
         delete[] m_keyBar.AltShiftTitles[i];
     for (i = 0; i < ARRAYSIZE(m_keyBar.CtrlAltTitles); i++)
         delete[] m_keyBar.CtrlAltTitles[i];
+    std::memset(&m_keyBar, 0, sizeof(m_keyBar));
 }
 
 KeyBarTitles& KeyBarTitlesHelper::getKeyBar()
@@ -33,73 +34,88 @@ KeyBarTitles& KeyBarTitlesHelper::getKeyBar()
     return m_keyBar;
 }
 
-void KeyBarTitlesHelper::setKey(int index, KeyBarTitlesHelper::KeyType type, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setKey(int index,
+                                               KeyBarTitlesHelper::KeyType type,
+                                               const std::wstring& hint)
 {
     switch(type)
     {
     case KeyType::NORMAL:
-        setNormalKey(index, name);
+        setNormalKey(index, hint);
         break;
     case KeyType::ALT:
-        setAltKey(index, name);
+        setAltKey(index, hint);
         break;
     case KeyType::ALT_SHIFT:
-        setAltShiftKey(index, name);
+        setAltShiftKey(index, hint);
         break;
     case KeyType::CTRL:
-        setCtrlKey(index, name);
+        setCtrlKey(index, hint);
         break;
     case KeyType::CTRL_ALT:
-        setCtrlAltKey(index, name);
+        setCtrlAltKey(index, hint);
         break;
     case KeyType::CTRL_SHIFT:
-        setCtrlShiftKey(index, name);
+        setCtrlShiftKey(index, hint);
         break;
     case KeyType::SHIFT:
-        setShiftKey(index, name);
+        setShiftKey(index, hint);
         break;
     }
+    return *this;
 }
 
-void KeyBarTitlesHelper::setNormalKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setNormalKey(int index,
+                                                     const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.Titles, name);
+    return setKeyGeneric(index, m_keyBar.Titles, hint);
 }
 
-void KeyBarTitlesHelper::setAltKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setCtrlKey(int index,
+                                                   const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.AltTitles, name);
+    return setKeyGeneric(index, m_keyBar.CtrlTitles, hint);
 }
 
-void KeyBarTitlesHelper::setShiftKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setAltKey(int index,
+                                                  const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.ShiftTitles, name);
+    return setKeyGeneric(index, m_keyBar.AltTitles, hint);
 }
 
-void KeyBarTitlesHelper::setCtrlShiftKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setShiftKey(int index,
+                                                    const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.CtrlShiftTitles, name);
+    return setKeyGeneric(index, m_keyBar.ShiftTitles, hint);
 }
 
-void KeyBarTitlesHelper::setAltShiftKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setCtrlShiftKey(int index,
+                                                        const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.AltShiftTitles, name);
+    return setKeyGeneric(index, m_keyBar.CtrlShiftTitles, hint);
 }
 
-void KeyBarTitlesHelper::setCtrlAltKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setAltShiftKey(int index,
+                                                       const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.CtrlAltTitles, name);
+    return setKeyGeneric(index, m_keyBar.AltShiftTitles, hint);
 }
 
-void KeyBarTitlesHelper::setCtrlKey(int index, const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setCtrlAltKey(int index,
+                                                      const std::wstring& hint)
 {
-    setKeyGeneric(index, m_keyBar.CtrlTitles, name);
+    return setKeyGeneric(index, m_keyBar.CtrlAltTitles, hint);
 }
 
-void KeyBarTitlesHelper::setKeyGeneric(int index, wchar_t* key[], const std::wstring& name)
+KeyBarTitlesHelper& KeyBarTitlesHelper::setKeyGeneric(int index, wchar_t* key[],
+                                                      const std::wstring& hint)
 {
+    // ignore invalid index; all hiht arrays have equal length
+    if ((index < 0) || (index >= int(ARRAYSIZE(m_keyBar.Titles))))
+        return *this;
     if (key[index]) delete[] key[index];
-    key[index] = new wchar_t[name.size() + 1];
-    std::memset(key[index], 0, sizeof(wchar_t) * (name.size() + 1));
-    std::copy(name.begin(), name.end(), key[index]);
+    key[index] = new wchar_t[hint.size() + 1];
+    std::memset(key[index], 0, sizeof(wchar_t) * (hint.size() + 1));
+    std::copy(hint.begin(), hint.end(), key[index]);
+    return *this;
 }

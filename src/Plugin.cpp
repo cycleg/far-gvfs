@@ -43,17 +43,17 @@ void Plugin::setStartupInfo(const PluginStartupInfo* psi)
 
     // key bar
     // all blocked in processKey()
-    m_keyBar.setNormalKey(2, emptyHint); 
-    m_keyBar.setNormalKey(4, emptyHint);
-    m_keyBar.setNormalKey(5, emptyHint);
+    m_keyBar.setNormalKey(2, emptyHint)
+            .setNormalKey(4, emptyHint)
+            .setNormalKey(5, emptyHint);
     for (int i = 0; i < 3; i++) m_keyBar.setShiftKey(i, emptyHint);
-    m_keyBar.setShiftKey(4, emptyHint);
-    m_keyBar.setShiftKey(5, emptyHint);
+    m_keyBar.setShiftKey(4, emptyHint)
+            .setShiftKey(5, emptyHint);
     for (int i = 2; i < 6; i++) m_keyBar.setAltKey(i, emptyHint);
 
-    m_keyBar.setNormalKey(6, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar));
-    m_keyBar.setShiftKey(3, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar));
-    m_keyBar.setShiftKey(7, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MShiftF8Bar));
+    m_keyBar.setNormalKey(6, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar))
+            .setShiftKey(3, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MF7Bar))
+            .setShiftKey(7, m_pPsi.GetMsg(m_pPsi.ModuleNumber, MShiftF8Bar));
     m_registryRoot.append(m_pPsi.RootKey);
     m_registryRoot.append(WGOOD_SLASH);
     m_registryRoot.append(MACRO_TEXT(PLUGIN_NAME));
