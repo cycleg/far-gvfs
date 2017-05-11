@@ -35,7 +35,7 @@ bool RegistryStorage::GetValue(HKEY folder, const std::wstring& field,
   value.clear();
   if (!folder || field.empty()) return false;
   BYTE* buf = new BYTE[MAX_PATH];
-	DWORD Type,
+  DWORD Type,
         sz = MAX_PATH;
   LONG res;
   do
@@ -64,7 +64,7 @@ bool RegistryStorage::GetValue(HKEY folder, const std::wstring& field,
   value.clear();
   if (!folder || field.empty()) return false;
   char* buf = new char[MAX_PATH];
-	DWORD Type,
+  DWORD Type,
         sz = MAX_PATH;
   LONG res;
   do
