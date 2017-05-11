@@ -68,6 +68,11 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
     Glib::RefPtr< Glib::MainContext > main_context = Glib::MainContext::create();
     // Чтобы контекст главного цикла Glib::MainLoop не отслеживал ничего,
     // кроме операций с ресурсом! Иначе блокируется пользовательский ввод Far.
+    // Из руководства:
+    // This will cause certain asynchronous operations (such as most GIO-based
+    // I/O) which are started in this thread to run under context and deliver
+    // their results to its main loop, rather than running under the global
+    // default context in the main thread.
     g_main_context_push_thread_default(main_context->gobj());
     m_mainLoop = Glib::MainLoop::create(main_context, false);
 
@@ -114,8 +119,15 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         {
             m_mainLoop->run();
         }
-        // вероятно, избыточная операция, но без нее Glib выдает assert,
-        // поэтому делаем
+        // Из руководства:
+        // In some cases however, you may want to schedule a single operation
+        // in a non-default context, or temporarily use a non-default context
+        // in the main thread. In that case, you can wrap the call to the
+        // asynchronous operation inside a
+        // g_main_context_push_thread_default() / g_main_context_pop_thread_default()
+        // pair...
+        // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает
+        // assert.
         g_main_context_pop_thread_default(main_context->gobj());
         m_mountName = m_file->find_enclosing_mount()->get_name();
         m_mountPath = m_file->find_enclosing_mount()->get_default_location()->get_path();
@@ -126,7 +138,8 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
     catch (const Glib::Error& ex)
     {
         // А здесь контекст потока восстанавливать не получается, и снова
-        // из-за assert в Glib. Сплошные загадки...
+        // из-за assert в Glib. Вероятно, это связано с "разматыванием" стека.
+        // Сплошные загадки...
         std::cerr << "GvfsService::mount() Glib::Error: " << ex.what().raw() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
         if (m_exception.get() == nullptr)
