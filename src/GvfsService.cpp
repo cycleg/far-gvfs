@@ -130,7 +130,7 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         // assert.
         g_main_context_pop_thread_default(main_context->gobj());
         m_mountName = m_file->find_enclosing_mount()->get_name();
-        m_mountPath = m_file->find_enclosing_mount()->get_default_location()->get_path();
+        m_mountPath = m_file->get_path();
         std::cout << "GvfsService::mount() name: " << m_mountName << std::endl;
         std::cout << "GvfsService::mount() path: " << m_mountPath << std::endl;
         l_mounted = true;
