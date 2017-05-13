@@ -46,6 +46,6 @@ class Crypto
     void decrypt(const std::vector<BYTE>& cipher, std::vector<BYTE>& plain);
 
   private:
-    EVP_CIPHER_CTX m_encodeContext, ///< контекст шифрации
-                   m_decodeContext; ///< контекст дешифрации
+    EVP_CIPHER_CTX* m_encodeContext, ///< контекст шифрации
+                  * m_decodeContext; ///< контекст дешифрации
 };
