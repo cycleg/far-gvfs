@@ -2,7 +2,9 @@
 #include <utils.h>
 #include "Crypto.h"
 
-Crypto::Crypto()
+Crypto::Crypto():
+  m_encodeContext(nullptr),
+  m_decodeContext(nullptr)
 {
   m_encodeContext = EVP_CIPHER_CTX_new();
   m_decodeContext = EVP_CIPHER_CTX_new();
