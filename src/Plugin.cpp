@@ -330,6 +330,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
             if (!dir.empty())
             {
                 m_pPsi.Control(Plugin, FCTL_SETPANELDIR, 0, (LONG_PTR)(dir.c_str()));
+                return 1;
             }
         }
     }
@@ -344,13 +345,15 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
 
     // add new resource
     MountPoint point(MountPointStorage::PointFactory());
-    if (EditResourceDlg(m_pPsi, point))
+    if (!EditResourceDlg(m_pPsi, point))
     {
-        MountPointStorage storage(m_registryRoot);
-        m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getResPath(), point));
-        // TODO: save error
-        storage.Save(point);
+        // user cancelled operation
+        return -1;
     }
+    MountPointStorage storage(m_registryRoot);
+    // TODO: save error
+    storage.Save(point);
+    m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getResPath(), point));
     return 1;
 }
 
