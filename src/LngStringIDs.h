@@ -4,7 +4,7 @@
 #pragma once
 
 ///
-/// @brief Коды элементов LNG-файлов плагина
+/// @brief Коды элементов LNG-файлов плагина.
 
 /// @authors invy, cycleg
 ///

@@ -39,24 +39,25 @@ class TextFormatter
     ///
     /// Задать ширину строки текста.
     ///
-    /// @param w Новая ширина строки
-    /// @return Ссылка на объект
+    /// @param [in] w Новая ширина строки.
+    /// @return Ссылка на объект.
     ///
     inline TextFormatter& TextWidth(unsigned int w)
     { m_textWidth = w; return *this; }
     ///
     /// Включить/выключить перенос текста по словам.
     ///
-    /// @param w true - перенос включен, false - строка разбивается произвольно
-    /// @return Ссылка на объект
+    /// @param [in] w true -- перенос включен, false -- строка разбивается
+    ///               произвольно.
+    /// @return Ссылка на объект.
     ///
     inline TextFormatter& WordWrap(bool w) { m_wordWrap = w; return *this; }
     ///
     /// Включить/выключить пропуск пустых строк в оригинальном тексте.
     ///
-    /// @param i true - строки пропускаются, false - строки включаются в
-    ///          в выходной текст
-    /// @return Ссылка на объект
+    /// @param [in] i true -- строки пропускаются, false -- строки включаются
+    ///               в выходной текст.
+    /// @return Ссылка на объект.
     ///
     inline TextFormatter& IgnoreEmptyLines(bool i)
     { m_ignoreEmptyLines = i; return *this; }
@@ -64,8 +65,8 @@ class TextFormatter
     /// Включить/выключить отбрасывание части оригинального текста, не
     /// укладывающейся в формат.
     ///
-    /// @param d true - текст отбрасывается, false - нет
-    /// @return Ссылка на объект
+    /// @param [in] d true -- текст отбрасывается, false -- нет.
+    /// @return Ссылка на объект.
     ///
     /// Отброшенный текст заменается на многоточие.
     ///
@@ -74,8 +75,8 @@ class TextFormatter
     ///
     /// Форматирование текста с возвратом набора строк.
     ///
-    /// @param text Оригинальный текст в виде одной большой строки
-    /// @param lines Набор переформатированных строк
+    /// @param [in] text Оригинальный текст в виде одной большой строки.
+    /// @param [out] lines Набор переформатированных строк.
     ///
     /// Если в оригинале длина строки меньше заданной, то строка не
     /// переформатируется.
@@ -84,39 +85,39 @@ class TextFormatter
     ///
     /// Форматирование первой строки оригинального текста.
     ///
-    /// @param text Оригинальный текст в виде одной большой строки
-    /// @return Отформатированная строка
+    /// @param [in] text Оригинальный текст в виде одной большой строки.
+    /// @return Отформатированная строка.
     ///
     /// Метод может вернуть пустую строку, если игнорирование их выключено.
     ///
     std::wstring FitToLine(const std::wstring& text) const;
 
   private:
-    static const wchar_t LinesDelimiter = '\n'; ///< разделитель строк в исходном тексте
-    static const wchar_t* WordDelimiters; ///< разделители слов в исходном тексте
-    static const std::wstring dropMark; ///< метка отброшенного исходного текста
+    static const wchar_t LinesDelimiter = '\n'; ///< Разделитель строк в исходном тексте.
+    static const wchar_t* WordDelimiters; ///< Разделители слов в исходном тексте.
+    static const std::wstring dropMark; ///< Метка отброшенного исходного текста.
 
     ///
     /// Разбить оригинальный текст на строки.
     ///
-    /// @param text Оригинальный текст в виде одной большой строки
-    /// @param lines Набор строк
+    /// @param [in] text Оригинальный текст в виде одной большой строки.
+    /// @param [out] lines Набор строк.
     ///
-    /// Символ '\r' в выходной текст не включается.
+    /// Символ "\r" в выходной текст не включается.
     ///
     void SplitLines(const std::wstring& text, std::vector<std::wstring>& lines) const;
     ///
     /// Разбить строку на слова.
     ///
-    /// @param text Оригинальный текст в виде одной большой строки
-    /// @param lines Набор строк
+    /// @param [in] text Оригинальный текст в виде строки.
+    /// @param [in] words Набор строк.
     ///
     /// Несколько разделителей слов подряд трактуются как один.
     ///
     void SplitWords(const std::wstring& text, std::vector<std::wstring>& words) const;
 
-    unsigned int m_textWidth; ///< ширина строки
-    bool m_wordWrap; ///< признак переноса по словам
-    bool m_ignoreEmptyLines; ///< признак игнорирования пустых строк
-    bool m_dropRemain; ///< признак отбрасывания оригинального текста
+    unsigned int m_textWidth; ///< Ширина строки.
+    bool m_wordWrap; ///< Флаг переноса по словам.
+    bool m_ignoreEmptyLines; ///< Флаг игнорирования пустых строк.
+    bool m_dropRemain; ///< Флаг отбрасывания оригинального текста.
 };

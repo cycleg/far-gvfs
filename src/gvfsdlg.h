@@ -43,8 +43,8 @@ struct InitDialogItem
 /// Редактирование ресурса для монтирования.
 ///
 /// @param [in] info
-/// @param [in, out] mountPoint
-/// @return false, если диалог прерван
+/// @param [in, out] mountPoint Редактируемый ресурс.
+/// @return false, если диалог прерван.
 ///
 /// @authors invy, cycleg
 ///
@@ -53,8 +53,8 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint);
 /// Запрос пароля перед монтированием ресурса.
 ///
 /// @param [in] info
-/// @param [in, out] mountPoint
-/// @return false, если диалог прерван
+/// @param [in, out] mountPoint Монтируемый ресурс.
+/// @return false, если диалог прерван.
 ///
 /// @author cycleg
 ///
@@ -63,7 +63,7 @@ bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint);
 /// Редактирование общих настроек плагина.
 ///
 /// @param [in] info
-/// @return false, если диалог прерван
+/// @return false, если диалог прерван.
 ///
 /// @author cycleg
 ///
@@ -72,11 +72,11 @@ bool ConfigurationEditDlg(PluginStartupInfo& info);
 /// Ответ на вопрос в ходе монтирования ресурса.
 ///
 /// @param [in] info
-/// @param [in] DIALOG_WIDTH
-/// @param [in] message
-/// @param [in] choices
+/// @param [in] DIALOG_WIDTH Ширина диалога.
+/// @param [in] message Запрос пользователю.
+/// @param [in] choices Варианты ответа
 /// @param [in, out] choice
-/// @return false, если диалог прерван
+/// @return false, если диалог прерван.
 ///
 /// @author cycleg
 ///

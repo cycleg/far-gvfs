@@ -15,7 +15,7 @@ class RegistryStorage
     ///
     /// Конструктор.
     ///
-    /// @param [in] registryFolder Имя корневой папки хранилища в реестре.
+    /// @param [in] registryFolder Путь к корневой папке хранилища в реестре.
     ///
     RegistryStorage(const std::wstring& registryFolder):
       m_registryFolder(registryFolder) {}
@@ -24,63 +24,63 @@ class RegistryStorage
     ///
     /// Присваивание поля реестра типа "Binary".
     ///
-    /// @param folder Дескриптор папки реестра с полем
-    /// @param field Имя поля
-    /// @param value Значение поля
-    /// @return Признак успешности операции
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [in] value Значение поля.
+    /// @return Признак успешности операции.
     ///
     bool SetValue(HKEY folder, const std::wstring& field,
                   const std::vector<BYTE>& value) const;
     ///
     /// Присваивание поля реестра типа "String".
     ///
-    /// @param folder Дескриптор папки реестра с полем
-    /// @param field Имя поля
-    /// @param value Значение поля
-    /// @return Признак успешности операции
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [in] value Значение поля.
+    /// @return Признак успешности операции.
     ///
     bool SetValue(HKEY folder, const std::wstring& field,
                   const std::wstring& value) const;
     ///
     /// Присваивание поля реестра типа "Dword".
     ///
-    /// @param folder Дескриптор папки реестра с полем
-    /// @param field Имя поля
-    /// @param value Значение поля
-    /// @return Признак успешности операции
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [in] value Значение поля.
+    /// @return Признак успешности операции.
     ///
     bool SetValue(HKEY folder, const std::wstring& field,
                   const DWORD value) const;
     ///
     /// Извлечение значения поля реестра типа "Binary".
     ///
-    /// @param folder Дескриптор папки реестра с полем
-    /// @param field Имя поля
-    /// @param value Буфер для значения поля
-    /// @return Признак успешности операции
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [out] value Буфер для значения поля.
+    /// @return Признак успешности операции.
     ///
     bool GetValue(HKEY folder, const std::wstring& field,
                   std::vector<BYTE>& value) const;
     ///
     /// Извлечение значения поля реестра типа "String".
     ///
-    /// @param folder Дескриптор папки реестра с полем
-    /// @param field Имя поля
-    /// @param value Буфер для значения поля
-    /// @return Признак успешности операции
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [out] value Буфер для значения поля.
+    /// @return Признак успешности операции.
     ///
     bool GetValue(HKEY folder, const std::wstring& field,
                   std::wstring& value) const;
     ///
     /// Извлечение значения поля реестра типа "Dword".
     ///
-    /// @param folder Дескриптор папки реестра с полем
-    /// @param field Имя поля
-    /// @param value Буфер для значения поля
-    /// @return Признак успешности операции
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [out] value Буфер для значения поля.
+    /// @return Признак успешности операции.
     ///
     bool GetValue(HKEY folder, const std::wstring& field,
                   DWORD& value) const;
 
-    std::wstring m_registryFolder; ///< полный путь к корневой папке хранилища
+    std::wstring m_registryFolder; ///< Полный путь к корневой папке хранилища.
 };

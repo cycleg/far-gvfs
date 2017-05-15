@@ -93,14 +93,14 @@ private:
     ///
     /// Отсоединить указанный ресурс.
     ///
-    /// @param point Класс-описание ресурса
+    /// @param [in,out] point Класс-описание ресурса.
     ///
     void unmountResource(MountPoint& point);
     ///
     /// Извлечь выбранный элемент панели.
     ///
-    /// @param Plugin Указатель на структуру плагина в FAR
-    /// @return указатель на выбранный лемент или nullptr, если элементов нет
+    /// @param [in] Plugin Указатель на структуру плагина в FAR.
+    /// @return указатель на выбранный лемент или nullptr, если элементов нет.
     ///
     PluginPanelItem* getPanelCurrentItem(HANDLE Plugin);
     ///
@@ -108,15 +108,15 @@ private:
     ///
     void checkResourcesStatus();
 
-    Options Opt;
-    KeyBarTitlesHelper m_keyBar; ///< элемент управления посказками о
-                                 ///< функциональных кнопках клавиатуры
-    PluginStartupInfo m_pPsi;
-    std::wstring m_registryRoot; ///< имя корневой папки плагина в реестре FAR
-    std::vector<PluginPanelItem> m_items; ///< набор элементов, отображаемых в
-                                          ///< панели плагина
+    Options Opt; ///< Параметры экземпляра плагина.
+    KeyBarTitlesHelper m_keyBar; ///< Элемент управления посказками о
+                                 ///< функциональных кнопках клавиатуры.
+    PluginStartupInfo m_pPsi; ///< API между плагином и far2l.
+    std::wstring m_registryRoot; ///< Имя корневой папки плагина в реестре FAR.
+    std::vector<PluginPanelItem> m_items; ///< Набор элементов, отображаемых в
+                                          ///< панели плагина.
     std::map<std::wstring, MountPoint> m_mountPoints; ///< Набор ресурсов для
-                                                      ///< монтирования. Ключ -
+                                                      ///< монтирования. Ключ --
                                                       ///< URL ресурса.
-    bool m_firstDemand; ///< флаг того, что панель ранее не открывали
+    bool m_firstDemand; ///< Флаг того, что панель ранее не открывали.
 };

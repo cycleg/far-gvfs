@@ -21,6 +21,9 @@
 /// В качестве имени подпапки используется UUID, что гарантирует уникальность
 /// ее имени.
 ///
+/// В хранилище пароли могут шифроваться средствами библиотеки libcrypto из
+/// OpenSSL, если таковая обнаружена в ходе сборки.
+///
 /// @author cycleg
 ///
 class MountPointStorage: public RegistryStorage
@@ -29,7 +32,8 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Конструктор.
     ///
-    /// @param registryFolder Имя папки, в которой находится подпапка хранилища
+    /// @param [in] registryFolder Имя папки, в которой находится подпапка
+    ///                            хранилища.
     ///
     /// К указанному в параметре registryFolder пути добавляется суффиксом
     /// значение константы StoragePath.
@@ -43,7 +47,7 @@ class MountPointStorage: public RegistryStorage
     static MountPoint PointFactory();
 
     ///
-    /// @return Готов или нет экземпляр класса к использованию
+    /// @return Готов или нет экземпляр класса к использованию.
     ///
     /// Класс не готов к использованию, если при инициализации не удалось ни
     /// открыть хранилище в реестре, ни создать его.
@@ -53,7 +57,7 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Загрузить все записи из хранилища.
     ///
-    /// @param storage Контейнер для вновь загруженных записей
+    /// @param [out] storage Контейнер для вновь загруженных записей.
     ///
     /// В качестве ключа в контейнере используется URL ресурса.
     ///
@@ -67,8 +71,8 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Сохранить запись в хранилище.
     ///
-    /// @param point Сохраняемая запись
-    /// @return Результат сохранения
+    /// @param [in] point Сохраняемая запись.
+    /// @return Результат сохранения.
     ///
     /// Если версия хранилища не совпадает с текущей поддерживаемой версией,
     /// записи из хранилища обновляются до текущей версии, а затем сохраняются,
@@ -82,31 +86,31 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Удалить указанную запись из хранилища.
     ///
-    /// @param point Удаляемая запись
+    /// @param [in] point Удаляемая запись.
     ///
     void Delete(const MountPoint& point) const;
 
   private:
-    static const wchar_t* StoragePath; ///< подпапка реестра, в которой
-                                       ///< хранятся записи
-    static const wchar_t* StorageVersionKey; ///< имя ключа реестра с версией
+    static const wchar_t* StoragePath; ///< Подпапка реестра, в которой
+                                       ///< хранятся записи.
+    static const wchar_t* StorageVersionKey; ///< Имя ключа реестра с версией
                                              ///< формата данных; находится в
                                              ///< той же папке, что и сами
-                                             ///< данные
-    static const DWORD StorageVersion; ///< текущая поддерживаемая версия
-                                       ///< хранилища
+                                             ///< данные.
+    static const DWORD StorageVersion; ///< Текущая поддерживаемая версия
+                                       ///< хранилища.
 
     ///
     /// Сгенерировать идентифкатор записи о ресурсе.
     ///
-    /// @param id Буфер для нового идентификатора
+    /// @param [out] id Буфер для нового идентификатора.
     /// 
     static void GenerateId(std::wstring& id);
     ///
     /// Закодировать данные.
     ///
-    /// @param in Исходные данные
-    /// @param out Кодированные данные
+    /// @param [out] in Исходные данные.
+    /// @param [out] out Кодированные данные.
     ///
     /// Кодирование очень и очень слабое, настоятельно рекомендуется
     /// использовать версию метода с шифрованием посредством OpenSSL.
@@ -116,11 +120,12 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Закодировать данные.
     ///
-    /// @param keydata Данные ключа
-    /// @param in Исходные данные
-    /// @param out Кодированные данные
+    /// @param [in] keydata Данные ключа.
+    /// @param [in] in Исходные данные.
+    /// @param [out] out Кодированные данные.
     ///
-    /// Данные шифруются средствами библиотеки libcrypto из OpenSSL.
+    /// Данные шифруются средствами библиотеки libcrypto из OpenSSL, если она
+    /// используется.
     ///
     static void Encrypt(const std::wstring& keydata, const std::wstring& in,
                         std::vector<BYTE>& out);
@@ -130,8 +135,8 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Декодировать данные.
     ///
-    /// @param in Кодированные данные
-    /// @param out Восстановленные данные
+    /// @param [in] in Кодированные данные.
+    /// @param [out] out Восстановленные данные.
     ///
     /// Кодирование очень и очень слабое, настоятельно рекомендуется
     /// использовать версию метода с шифрованием посредством OpenSSL.
@@ -143,11 +148,12 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Декодировать данные.
     ///
-    /// @param keydata Данные ключа
-    /// @param in Кодированные данные
-    /// @param out Восстановленные данные
+    /// @param [in] keydata Данные ключа.
+    /// @param [in] in Кодированные данные.
+    /// @param [out] out Восстановленные данные.
     ///
-    /// Данные дешифруются средствами библиотеки libcrypto из OpenSSL.
+    /// Данные дешифруются средствами библиотеки libcrypto из OpenSSL, если
+    /// она используется.
     ///
     void Decrypt(const std::wstring& keydata, const std::vector<BYTE>& in,
                  std::wstring& out) const;
@@ -158,13 +164,13 @@ class MountPointStorage: public RegistryStorage
     ///
     /// Загрузить следующую запись из хранилища.
     ///
-    /// @param point Буфер для загружаемой записи
-    /// @return Результат загрузки
+    /// @param [in,out] point Буфер для загружаемой записи.
+    /// @return Результат загрузки.
     ///
     /// Возвращает true, если загрузка прошла успешно, false - в прочих
     /// случаях. Если загрузка не удалась, содержимое буфера не меняется.
     ///
     bool Load(MountPoint& point) const;
 
-    DWORD m_version; ///< версия данных, загружаемая из хранилища
+    DWORD m_version; ///< Версия данных, загружаемая из хранилища.
 };

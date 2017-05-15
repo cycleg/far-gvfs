@@ -21,8 +21,8 @@ class Configuration: public RegistryStorage
     ///
     /// Доступ к экземпляру-синглету.
     ///
-    /// @param registryFolder Путь в реестре к папке плагина
-    /// @return указатель на экземпляр Configuration
+    /// @param [in] registryFolder Путь в реестре к папке плагина.
+    /// @return Указатель на экземпляр Configuration.
     ///
     /// Путь к папке сохраняется в свойстве класса m_registryFolder,
     /// унаследованном от RegistryStorage.
@@ -35,7 +35,7 @@ class Configuration: public RegistryStorage
     ///
     /// Доступ к экземпляру-синглету.
     ///
-    /// @return указатель на экземпляр Configuration
+    /// @return Указатель на экземпляр Configuration.
     ///
     /// Может вернуть nullptr, если вызван до метода Instance(registryFolder).
     ///
@@ -43,14 +43,14 @@ class Configuration: public RegistryStorage
     ///
     /// Извлечь значение параметра "отключать ресурсы при выходе".
     ///
-    /// @return Значение параметра "отключать ресурсы при выходе"
+    /// @return Значение параметра "отключать ресурсы при выходе".
     ///
     inline bool unmountAtExit() const { return m_unmountAtExit; }
     ///
     /// Присвоить значение параметру "отключать ресурсы при выходе".
     ///
-    /// @param u Новое значение
-    /// @return Указатель на синглет
+    /// @param [in] u Новое значение
+    /// @return Указатель на синглет.
     ///
     inline Configuration* setUnmountAtExit(bool u)
     { m_unmountAtExit = u; return this; }
@@ -61,10 +61,12 @@ class Configuration: public RegistryStorage
     void save() const;
 
   private:
-    static Configuration* instance; ///< экземпляр-синглет класса
+    static Configuration* instance; ///< Экземпляр-синглет класса.
 
     ///
     /// Конструктор.
+    ///
+    /// @param [in] registryFolder Путь в реестре к папке плагина.
     ///
     Configuration(const std::wstring& registryFolder);
 
@@ -73,5 +75,6 @@ class Configuration: public RegistryStorage
     ///
     void load();
 
-    bool m_unmountAtExit; ///< значение параметра "отключать ресурсы при выходе"
+    bool m_unmountAtExit; ///< Значение параметра "отключать ресурсы при
+                          ///< выходе".
 };
