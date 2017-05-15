@@ -15,7 +15,7 @@
 ///
 /// Переданные в методы setKey() строки копируются во внутренние буферы.
 ///
-/// @author invy, cycleg
+/// @authors invy, cycleg
 ///
 class KeyBarTitlesHelper {
 public:
@@ -23,17 +23,23 @@ public:
     /// Типы комбинаций кнопок с модификаторами.
     ///
     enum class KeyType {
-        NORMAL, ///< нажатие без модификаторов
-        CTRL,
-        ALT,
-        SHIFT,
-        CTRL_SHIFT,
-        ALT_SHIFT,
-        CTRL_ALT
+        NORMAL, ///< Нажатие без модификаторов.
+        CTRL, ///< Нажатие с Ctrl
+        ALT, ///< Нажатие с Alt
+        SHIFT, ///< Нажатие с Shift
+        CTRL_SHIFT, ///< Нажатие с Ctrl+Shift
+        ALT_SHIFT, ///< Нажатие с Alt+Shift
+        CTRL_ALT ///< Нажатие с Ctrl+Alt
     };
 
 public:
+    ///
+    /// Конструктор.
+    ///
     KeyBarTitlesHelper();
+    ///
+    /// Деструктор.
+    ///
     ~KeyBarTitlesHelper();
 
     ///

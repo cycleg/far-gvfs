@@ -9,7 +9,9 @@
 #include "MountPoint.h"
 
 ///
-/// Параметры FAR-плагина
+/// Параметры FAR-плагина.
+///
+/// @author invy
 ///
 struct Options
 {
@@ -34,18 +36,27 @@ struct Options
 };
 
 /// 
-/// Класс-реализация Unicode плагина far2l.
+/// @brief Класс-реализация Unicode плагина far2l.
 
 /// Реализован как синглетон.
 /// 
-/// @author invy, cycleg
+/// @authors invy, cycleg
 ///
 class Plugin
 {
 public:
+    ///
+    /// Получить ссылку на экземпляр-синглет класса.
+    ///
     static Plugin& getInstance();
 
+    ///
+    /// Конструктор.
+    ///
     Plugin();
+    ///
+    /// Деструктор.
+    ///
     ~Plugin();
 
     int getVersion();

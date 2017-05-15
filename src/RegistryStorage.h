@@ -5,13 +5,18 @@
 #include <windows.h>
 
 /// 
-/// Класс с набором методов, общих для всех registry-хранилищ.
+/// @brief Класс с набором методов, общих для всех registry-хранилищ.
 
 /// @author cycleg
 ///
 class RegistryStorage
 {
   public:
+    ///
+    /// Конструктор.
+    ///
+    /// @param [in] registryFolder Имя корневой папки хранилища в реестре.
+    ///
     RegistryStorage(const std::wstring& registryFolder):
       m_registryFolder(registryFolder) {}
 

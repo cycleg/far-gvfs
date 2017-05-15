@@ -1,3 +1,6 @@
+///
+/// @file gvfsdlg.h
+///
 #pragma once
 
 #include <string>
@@ -6,41 +9,52 @@
 #include "MountPoint.h"
 
 ///
-/// Структура-описание элемента диалога.
-///
+/// @brief Структура-описание элемента диалога.
+
 /// Преобразуется в структуру FarDialogItem.
 ///
-/// @author invy, cycleg
+/// @authors invy, cycleg
 ///
 struct InitDialogItem
 {
-    int Type;
-    int X1;
-    int Y1;
-    int X2;
-    int Y2;
-    int Focus;
+    int Type; ///< Тип элемента диалога.
+    int X1; ///< X-координата левого верхнего угла.
+    int Y1; ///< Y-координата левого верхнего угла.
+    int X2; ///< X-координата правого нижнего угла.
+    int Y2; ///< Y-координата правого нижнего угла.
+    int Focus; ///< В фокусе элемент илли нет.
     union
     {
-        DWORD_PTR Reserved;
-        int Selected;
-        struct FarList* ListItems;
+        DWORD_PTR Reserved; ///< Для будущего использования.
+        int Selected; ///< Для CheckBox включен он или выключен.
+        struct FarList* ListItems; ///< Список вариантов для ListBox или ComboBox.
     };
-    unsigned int Flags;
-    int DefaultButton;
-    int lngIdx;
-    std::wstring text;
-    int maxLen;
+    unsigned int Flags; ///< Флаги элемента диалога.
+    int DefaultButton; ///< Элемент является кнопкой по умолчанию.
+    int lngIdx; ///< Индекс сообщения в языковом файле. Может быть равен -1.
+                ///< Подставляется в качестве текста элемента.
+    std::wstring text; ///< Текст элемента. Игнорируется, если указан
+                       ///< существующий lngIdx.
+    int maxLen; ///< Максимальная длина значения элемента, например, поля
+                ///< ввода. 0 -- без ограничений.
 };
 
 ///
 /// Редактирование ресурса для монтирования.
 ///
-/// @author invy, cycleg
+/// @param [in] info
+/// @param [in, out] mountPoint
+/// @return false, если диалог прерван
+///
+/// @authors invy, cycleg
 ///
 bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint);
 ///
 /// Запрос пароля перед монтированием ресурса.
+///
+/// @param [in] info
+/// @param [in, out] mountPoint
+/// @return false, если диалог прерван
 ///
 /// @author cycleg
 ///
@@ -48,11 +62,21 @@ bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint);
 ///
 /// Редактирование общих настроек плагина.
 ///
+/// @param [in] info
+/// @return false, если диалог прерван
+///
 /// @author cycleg
 ///
 bool ConfigurationEditDlg(PluginStartupInfo& info);
 ///
 /// Ответ на вопрос в ходе монтирования ресурса.
+///
+/// @param [in] info
+/// @param [in] DIALOG_WIDTH
+/// @param [in] message
+/// @param [in] choices
+/// @param [in, out] choice
+/// @return false, если диалог прерван
 ///
 /// @author cycleg
 ///

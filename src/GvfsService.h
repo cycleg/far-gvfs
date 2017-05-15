@@ -9,7 +9,7 @@
 class UiCallbacks;
 
 /// 
-/// Обертка вокруг Gtkmm для операций с ресурсами GVFS.
+/// @brief Обертка вокруг Gtkmm для операций с ресурсами GVFS
 
 /// Реализует три операции:
 /// * подсоединение ресурса;
@@ -23,7 +23,7 @@ class UiCallbacks;
 /// Класс не потокобезопасный из-за уродливого "объезда" ошибки в glibmm
 /// v2.50.0. Подробнее см. в GvfsService.cpp.
 ///
-/// @author invy, cycleg
+/// @authors invy, cycleg
 ///
 class GvfsService
 {

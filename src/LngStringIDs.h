@@ -1,11 +1,14 @@
+///
+/// @file LngStringIDs.h
+///
 #pragma once
 
 ///
-/// Коды элементов LNG-файлов плагина
+/// @brief Коды элементов LNG-файлов плагина
+
+/// @authors invy, cycleg
 ///
-/// @author invy, cycleg
-///
-enum
+enum LngStringsID
 {
   MOk,
   MCancel,

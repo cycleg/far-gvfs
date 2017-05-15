@@ -6,7 +6,7 @@
 #include <WinCompat.h>
 
 /// 
-/// Encrypt/decrypt text wrapper over OpenSSL.
+/// @brief Encrypt/decrypt text, wrapper over OpenSSL
 
 /// Use AES 256 CBC.
 ///
@@ -15,7 +15,13 @@
 class Crypto
 {
   public:
+    ///
+    /// Конструктор.
+    ///
     Crypto();
+    ///
+    /// Деструктор.
+    ///
     ~Crypto();
 
     ///
