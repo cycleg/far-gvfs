@@ -1,3 +1,6 @@
+///
+/// @file MountPoint.h
+///
 #pragma once
 
 #include <string>
@@ -31,19 +34,19 @@ class MountPointStorage;
 ///
 class MountPoint
 {
-  friend class MountPointStorage;
+  friend class MountPointStorage; ///< Для сериализации.
 
   public:
     ///
-    /// Транспортный протокол ресурса. В текущей реализации всегда NoFs.
+    /// Транспортный протокол ресурса.
     ///
-    enum class Protocol {
-        NoFs,
+    enum class EProtocol {
         DiskFs,
         Scp,
         Nfs,
         Samba,
-        WebDav
+        WebDav,
+        Unknown
     };
 
     ///
@@ -80,6 +83,7 @@ class MountPoint
     /// Оператор присваивания класса.
     ///
     /// @param [in] other Копируемый экземпляр класса.
+    /// @return Ссылка на данный экземпляр класса.
     ///
     /// Экземпляры класса MountPoint не владеют ресурсами, поэтому могут
     /// свободно копироваться. Однако копировать смонтированные ресурсы
@@ -90,35 +94,56 @@ class MountPoint
 
     ///
     /// Флаг смонтированности ресурса.
+    ///
+    /// @return Смонтирован ресурс или нет.
     /// 
     inline bool isMounted() const { return m_bMounted; }
     ///
-    /// Тип ресурса. В текущей реализации всегда NoFs.
+    /// Тип ресурса.
     ///
-    inline Protocol getFsType() const { return m_type; }
+    /// @return Тип ресурса.
+    ///
+    /// В текущей реализации всегда Unkown.
+    ///
+    inline EProtocol getFsType() const { return m_type; }
     ///
     /// Точка монтирования ресурса (путь) в локальной файловой системе.
-    /// Пустая строка, если ресурс не смонтирован.
+    ///
+    /// @return Путь в локальной файловой системе.
+    ///
+    /// Возвращает пустую строку, если ресурс не смонтирован.
     ///
     inline const std::wstring& getFsPath() const { return m_mountPointPath; }
     ///
-    /// Имя смонтированного ресурса. Пустая строка, если ресурс не смонтирован.
+    /// Имя смонтированного ресурса.
+    ///
+    /// @return Имя ресурса.
+    ///
+    /// Возвращает пустую строку, если ресурс не смонтирован.
     ///
     inline const std::wstring& getMountName() const { return m_shareName; }
     ///
     /// URL ресурса.
     ///
+    /// @return URL.
+    ///
     inline const std::wstring& getResPath() const { return m_resPath; }
     ///
     /// Имя пользователя для аутентификации на ресурсе.
+    ///
+    /// @return Имя пользователя.
     ///
     inline const std::wstring& getUser() const { return m_user; }
     ///
     /// Пароль для аутентификации на ресурсе.
     ///
+    /// @return Пароль.
+    ///
     inline const std::wstring& getPassword() const { return m_password; }
     ///
     /// Флаг запроса пароля для аутентификации на ресурсе при подключении.
+    ///
+    /// @return Состояние флага.
     ///
     inline bool getAskPassword() const { return m_askPassword; }
 
@@ -218,7 +243,7 @@ class MountPoint
 
   private:
     bool m_bMounted; ///< Флаг, смонтирован ресурс или нет.
-    Protocol m_type; ///< В текущей реализации всегда NoFs.
+    EProtocol m_type; ///< Протокол. В текущей реализации всегда Unknown.
     std::wstring m_resPath; ///< URL ресурса.
     std::wstring m_user; ///< Имя пользователя для аутентификации на ресурсе.
     std::wstring m_password; ///< Пароль для аутентификации на ресурсе.

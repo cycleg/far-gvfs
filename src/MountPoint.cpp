@@ -5,14 +5,14 @@
 
 MountPoint::MountPoint():
     m_bMounted(false),
-    m_type(FileSystem::NoFs),
+    m_type(EProtocol::Unknown),
     m_askPassword(false)
 {
 }
 
 MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, const std::wstring &password) :
     m_bMounted(false),
-    m_type(FileSystem::NoFs),
+    m_type(EProtocol::Unknown),
     m_resPath(resPath),
     m_user(user),
     m_password(password),
