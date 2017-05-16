@@ -5,14 +5,14 @@
 
 MountPoint::MountPoint():
     m_bMounted(false),
-    m_type(EProtocol::Unknown),
+    m_proto(EProtocol::Unknown),
     m_askPassword(false)
 {
 }
 
 MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, const std::wstring &password) :
     m_bMounted(false),
-    m_type(EProtocol::Unknown),
+    m_proto(EProtocol::Unknown),
     m_resPath(resPath),
     m_user(user),
     m_password(password),
@@ -23,7 +23,7 @@ MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, co
 MountPoint::MountPoint(const MountPoint& other)
 {
     m_bMounted = other.m_bMounted;
-    m_type = other.m_type;
+    m_proto = other.m_proto;
     m_resPath = other.m_resPath;
     m_user = other.m_user;
     m_password = other.m_password;
@@ -36,7 +36,7 @@ MountPoint::MountPoint(const MountPoint& other)
 MountPoint& MountPoint::operator=(const MountPoint& other)
 {
     m_bMounted = other.m_bMounted;
-    m_type = other.m_type;
+    m_proto = other.m_proto;
     m_resPath = other.m_resPath;
     m_user = other.m_user;
     m_password = other.m_password;

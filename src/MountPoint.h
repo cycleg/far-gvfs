@@ -99,13 +99,13 @@ class MountPoint
     /// 
     inline bool isMounted() const { return m_bMounted; }
     ///
-    /// Тип ресурса.
+    /// Используемый в ресурсе транспортный протокол.
     ///
-    /// @return Тип ресурса.
+    /// @return Протокол.
     ///
     /// В текущей реализации всегда Unkown.
     ///
-    inline EProtocol getFsType() const { return m_type; }
+    inline EProtocol getProto() const { return m_proto; }
     ///
     /// Точка монтирования ресурса (путь) в локальной файловой системе.
     ///
@@ -243,7 +243,7 @@ class MountPoint
 
   private:
     bool m_bMounted; ///< Флаг, смонтирован ресурс или нет.
-    EProtocol m_type; ///< Протокол. В текущей реализации всегда Unknown.
+    EProtocol m_proto; ///< Протокол. В текущей реализации всегда Unknown.
     std::wstring m_resPath; ///< URL ресурса.
     std::wstring m_user; ///< Имя пользователя для аутентификации на ресурсе.
     std::wstring m_password; ///< Пароль для аутентификации на ресурсе.
