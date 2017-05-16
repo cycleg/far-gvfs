@@ -1,3 +1,6 @@
+///
+/// @file MountPointStorage.h
+///
 #pragma once
 
 #include <map>
@@ -40,6 +43,10 @@ class MountPointStorage: public RegistryStorage
     ///
     MountPointStorage(const std::wstring& registryFolder);
 
+    ///
+    /// Фабрика описаний ресурсов.
+    ///
+    /// @return Новое описание ресурса.
     ///
     /// Создает новый экземпляр класса MountPoint с заполненным свойством
     /// m_storageId, что необходимо для его дальнейшей сериализации.
