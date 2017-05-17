@@ -41,11 +41,10 @@ class MountPoint
     /// Транспортный протокол ресурса.
     ///
     enum class EProtocol {
-        DiskFs,
-        Scp,
-        Nfs,
+        File,
+        Sftp,
+        Http,
         Samba,
-        WebDav,
         Unknown
     };
 
@@ -103,7 +102,8 @@ class MountPoint
     ///
     /// @return Протокол.
     ///
-    /// В текущей реализации всегда Unkown.
+    /// Если ресурс не подмонтирован или используется неизвестный пртокол,
+    /// то Unknown.
     ///
     inline EProtocol getProto() const { return m_proto; }
     ///
@@ -242,8 +242,19 @@ class MountPoint
     void mountCheck(GvfsService* service);
 
   private:
+    ///
+    /// Транслирует схему из URI ресурса в транспортный протокл.
+    ///
+    /// @param [in] scheme Схема в виде строки.
+    /// @return Транспортный протокол.
+    ///
+    /// Если схема не распознана, возвращает Unknown. В текущей реализации
+    /// распознаются протоколы из MountPoint::EProtocol.
+    ///
+    static EProtocol SchemeToProto(const std::string& scheme);
+
     bool m_bMounted; ///< Флаг, смонтирован ресурс или нет.
-    EProtocol m_proto; ///< Протокол. В текущей реализации всегда Unknown.
+    EProtocol m_proto; ///< Используемый транспортный протокол.
     std::wstring m_resPath; ///< URL ресурса.
     std::wstring m_user; ///< Имя пользователя для аутентификации на ресурсе.
     std::wstring m_password; ///< Пароль для аутентификации на ресурсе.

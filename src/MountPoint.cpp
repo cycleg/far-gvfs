@@ -62,8 +62,9 @@ bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
     if (success)
     {
         m_bMounted = true;
-        StrMB2Wide(service->getMountName(), m_shareName);
+        m_proto = MountPoint::SchemeToProto(service->getMountScheme());
         StrMB2Wide(service->getMountPath(), m_mountPointPath);
+        StrMB2Wide(service->getMountName(), m_shareName);
     }
     return success;
 }
@@ -83,15 +84,17 @@ bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
     catch (const GvfsServiceException& e)
     {
         // exception equal to unmount
-        m_mountPointPath.clear();
         m_shareName.clear();
+        m_mountPointPath.clear();
+        m_proto = EProtocol::Unknown;
         m_bMounted = false;
         throw; // escalate error
     }
     if (success)
     {
-        m_mountPointPath.clear();
         m_shareName.clear();
+        m_mountPointPath.clear();
+        m_proto = EProtocol::Unknown;
         m_bMounted = false;
     }
     return success;
@@ -104,12 +107,14 @@ void MountPoint::mountCheck(GvfsService* service)
     {
         m_mountPointPath.clear();
         m_shareName.clear();
+        m_proto = EProtocol::Unknown;
         m_bMounted = false;
         return;
     }
     if (service->mounted(resPath))
         {
             m_bMounted = true;
+            m_proto = MountPoint::SchemeToProto(service->getMountScheme());
             StrMB2Wide(service->getMountPath(), m_mountPointPath);
             StrMB2Wide(service->getMountName(), m_shareName);
         }
@@ -117,6 +122,17 @@ void MountPoint::mountCheck(GvfsService* service)
         {
             m_shareName.clear();
             m_mountPointPath.clear();
+            m_proto = EProtocol::Unknown;
             m_bMounted = false;
         }
+}
+
+MountPoint::EProtocol MountPoint::SchemeToProto(const std::string& scheme)
+{
+    MountPoint::EProtocol ret = EProtocol::Unknown;
+    if (scheme == "file") ret = EProtocol::File;
+    else if (scheme == "sftp") ret = EProtocol::Sftp;
+    else if (scheme == "http") ret = EProtocol::Http;
+    else if (scheme == "smb") ret = EProtocol::Samba;
+    return ret;
 }

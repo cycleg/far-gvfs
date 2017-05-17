@@ -60,6 +60,7 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
 
 std::cerr << "GvfsService::mount() " << resPath << std::endl;
     m_exception.reset();
+    m_mountScheme.clear();
     m_mountPath.clear();
     m_mountName.clear();
 
@@ -131,8 +132,10 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         g_main_context_pop_thread_default(main_context->gobj());
         m_mountName = m_file->find_enclosing_mount()->get_name();
         m_mountPath = m_file->get_path();
+        m_mountScheme = m_file->get_uri_scheme();
         std::cout << "GvfsService::mount() name: " << m_mountName << std::endl;
         std::cout << "GvfsService::mount() path: " << m_mountPath << std::endl;
+        std::cout << "GvfsService::mount() scheme: " << m_mountScheme << std::endl;
         l_mounted = true;
     }
     catch (const Glib::Error& ex)
@@ -191,12 +194,14 @@ std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::
           m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
                                          ex.code(), ex.what());
         }
+        m_mountScheme.clear();
         m_mountPath.clear();
         m_mountName.clear();
         throw *m_exception;
     }
     if (l_unmounted)
         {
+            m_mountScheme.clear();
             m_mountPath.clear();
             m_mountName.clear();
         }
@@ -204,6 +209,7 @@ std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::
         {
             if (m_exception.get() != nullptr)
             {
+                m_mountScheme.clear();
                 m_mountPath.clear();
                 m_mountName.clear();
                 throw *m_exception;
@@ -216,6 +222,7 @@ bool GvfsService::mounted(const std::string& resPath)
 {
 std::cerr << "GvfsService::mounted() " << resPath << std::endl;
     m_exception.reset();
+    m_mountScheme.clear();
     m_mountPath.clear();
     m_mountName.clear();
 
@@ -240,7 +247,14 @@ std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std:
         if (l_mount.operator->() != nullptr)
         {
             m_mountName = l_mount->get_name();
-            m_mountPath = l_mount->get_default_location()->get_path();
+            m_mountPath = m_file->get_path();
+            m_mountScheme = m_file->get_uri_scheme();
+            std::cout << "GvfsService::mounted() name: " << m_mountName
+                      << std::endl;
+            std::cout << "GvfsService::mounted() path: " << m_mountPath
+                      << std::endl;
+            std::cout << "GvfsService::mounted() scheme: " << m_mountScheme
+                      << std::endl;
         }
     }
     catch (const Glib::Error& ex)
