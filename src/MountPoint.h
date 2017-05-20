@@ -42,9 +42,10 @@ class MountPoint
     ///
     enum class EProtocol {
         File,
-        Sftp,
+        Ftp,
         Http,
         Samba,
+        Sftp,
         Unknown
     };
 

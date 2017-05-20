@@ -131,8 +131,9 @@ MountPoint::EProtocol MountPoint::SchemeToProto(const std::string& scheme)
 {
     MountPoint::EProtocol ret = EProtocol::Unknown;
     if (scheme == "file") ret = EProtocol::File;
-    else if (scheme == "sftp") ret = EProtocol::Sftp;
+    else if (scheme == "ftp") ret = EProtocol::Ftp;
     else if (scheme == "http") ret = EProtocol::Http;
     else if (scheme == "smb") ret = EProtocol::Samba;
+    else if (scheme == "sftp") ret = EProtocol::Sftp;
     return ret;
 }
