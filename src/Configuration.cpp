@@ -4,7 +4,8 @@ Configuration* Configuration::instance = nullptr;
 
 Configuration::Configuration(const std::wstring& registryFolder):
   RegistryStorage(registryFolder),
-  m_unmountAtExit(true)
+  m_unmountAtExit(true),
+  m_useSecretService(false)
 {
 }
 
@@ -25,8 +26,8 @@ void Configuration::save() const
                                    0, KEY_WRITE, &hKey);
   // ignore save errors
   if (res != ERROR_SUCCESS) return;
-  DWORD l_unmountAtExit = m_unmountAtExit;
-  SetValue(hKey, L"UnmountAtExit", l_unmountAtExit);
+  SetValue(hKey, L"UnmountAtExit", m_unmountAtExit);
+  SetValue(hKey, L"UseSecretService", m_useSecretService);
   WINPORT(RegCloseKey)(hKey);
 }
 
@@ -46,18 +47,12 @@ void Configuration::load()
   }
   if (res == ERROR_SUCCESS)
   {
-    DWORD l_unmountAtExit;
-    bool ret = GetValue(hKey, L"UnmountAtExit", l_unmountAtExit);
-    if (ret)
-      {
-        m_unmountAtExit = l_unmountAtExit;
-      }
-      else
-      {
-        // save default configuration
-        l_unmountAtExit = m_unmountAtExit;
-        ret = SetValue(hKey, L"UnmountAtExit", l_unmountAtExit);
-      }
+    // извлечь-иначе-сохранить значения по умолчанию
+    DWORD l_bool;
+    if (GetSetValue<DWORD>(hKey, L"UnmountAtExit", l_bool, m_unmountAtExit))
+      m_unmountAtExit = l_bool;
+    if (GetSetValue<DWORD>(hKey, L"UseSecretService", l_bool, m_useSecretService))
+      m_useSecretService = l_bool;
     WINPORT(RegCloseKey)(hKey);
   }
 }

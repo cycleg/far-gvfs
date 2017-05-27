@@ -81,6 +81,39 @@ class RegistryStorage
     ///
     bool GetValue(HKEY folder, const std::wstring& field,
                   DWORD& value) const;
+    ///
+    /// Извлечение-иначе-присваивание значения поля реестра.
+    ///
+    /// @param [in] folder Дескриптор папки реестра с полем.
+    /// @param [in] field Имя поля.
+    /// @param [out] value Буфер для значения поля.
+    /// @param [in] default_ Значение поля по умолчанию.
+    /// @return Признак успешности операции.
+    ///
+    /// Сначала поле пытаются прочитать. Если оно отсутствует, то его
+    /// создают со значением по умолчанию. В параметре value возвращается
+    /// записанное в реестр значение, если операция завершилась успешно.
+    ///
+    template <class ValueType> bool GetSetValue(HKEY folder,
+                                                const std::wstring& field,
+                                                ValueType& value,
+                                                ValueType default_) const
+    {
+      ValueType l_value;
+      bool ret = GetValue(folder, field, l_value);
+      if (ret)
+        {
+          value = l_value;
+        }
+        else
+        {
+          // save default value
+          l_value = default_;
+          ret = SetValue(folder, field, l_value);
+          if (ret) value = l_value;
+        }
+      return ret;
+    }
 
     std::wstring m_registryFolder; ///< Полный путь к корневой папке хранилища.
 };

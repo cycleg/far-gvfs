@@ -6,8 +6,10 @@
 /// @brief Класс для работы с конфигурацией плагина.
 
 /// Конфигурационные параметры сохраняются в реестре far2l в ветке плагина
-/// "Software/Far2/gvfspanel". В текущей реализации имеется один параметр:
+/// "Software/Far2/gvfspanel". В текущей реализации имеются два параметра:
 /// * отключение известных подмонтированных ресурсов при выходе из far2l
+///   (да/нет);
+/// * ииспользовать для хранения паролей системную службу секретности
 ///   (да/нет).
 ///
 /// Класс реализован как синглетон для доступа к параметрам из любой точки
@@ -49,11 +51,25 @@ class Configuration: public RegistryStorage
     ///
     /// Присвоить значение параметру "отключать ресурсы при выходе".
     ///
-    /// @param [in] u Новое значение
+    /// @param [in] v Новое значение.
     /// @return Указатель на синглет.
     ///
-    inline Configuration* setUnmountAtExit(bool u)
-    { m_unmountAtExit = u; return this; }
+    inline Configuration* setUnmountAtExit(bool v)
+    { m_unmountAtExit = v; return this; }
+    ///
+    /// Извлечь значение параметра "использовать секретную службу".
+    ///
+    /// @return Значение параметра "использовать секретную службу".
+    ///
+    inline bool useSecretService() const { return m_useSecretService; }
+    ///
+    /// Присвоить значение параметру "использовать секретную службу".
+    ///
+    /// @param [in] v Новое значение.
+    /// @return Указатель на синглет.
+    ///
+    inline Configuration* setUseSecretService(bool v)
+    { m_useSecretService = v; return this; }
 
     ///
     /// Сохранить конфигурацию плагина в реестр.
@@ -77,4 +93,6 @@ class Configuration: public RegistryStorage
 
     bool m_unmountAtExit; ///< Значение параметра "отключать ресурсы при
                           ///< выходе".
+    bool m_useSecretService; ///< Значение параметра "использовать секретную
+                             ///< службу".
 };
