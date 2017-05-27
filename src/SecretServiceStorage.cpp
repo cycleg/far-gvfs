@@ -14,6 +14,8 @@
 
 using namespace std::placeholders;
 
+const char* RecordLabel = "Far-gvfs password record";
+
 namespace {
 
 std::function<void(GObject*, GAsyncResult*, gpointer)>
@@ -38,7 +40,30 @@ extern "C" void password_cleared_wrapper(GObject* source, GAsyncResult* result,
   password_cleared_callback(source, result, user_data);
 }
 
+///
+/// @brief Схема сохранения паролей для libsecret.
+
+/// @author cycleg
+///
+const SecretSchema* SecretServiceStorageSchema() G_GNUC_CONST;
+
+const SecretSchema* SecretServiceStorageSchema()
+{
+    static const SecretSchema the_schema = {
+        "org.far2l.gvfspanel.secure.storage.password", SECRET_SCHEMA_NONE,
+        {
+            {  "user", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  "server", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  "protocol", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  "NULL", SECRET_SCHEMA_ATTRIBUTE_STRING },
+        }
+    };
+    return &the_schema;
+}
+
 } // anonymous namespace
+
+#define SECRET_SERVICE_STORAGE_SCHEMA SecretServiceStorageSchema()
 
 SecretServiceStorage::SecretServiceStorage(): m_result(false)
 {
@@ -74,9 +99,9 @@ bool SecretServiceStorage::SavePassword(const std::wstring& url,
   g_main_context_push_thread_default(main_context->gobj());
   m_mainLoop = Glib::MainLoop::create(main_context, false);
 
-  secret_password_store(SECRET_SCHEMA_COMPAT_NETWORK, // The password type.
+  secret_password_store(SECRET_SERVICE_STORAGE_SCHEMA, // The password type.
                         SECRET_COLLECTION_DEFAULT, // Where to save it: on disk.
-                        uriBuf.c_str(), // Password label.
+                        RecordLabel,
                         passwordBuf.c_str(), // The password itself.
                         nullptr, // Cancellation object.
                         password_stored_wrapper, // Callback
@@ -120,7 +145,7 @@ bool SecretServiceStorage::LoadPassword(const std::wstring& url,
   g_main_context_push_thread_default(main_context->gobj());
   m_mainLoop = Glib::MainLoop::create(main_context, false);
 
-  secret_password_lookup(SECRET_SCHEMA_COMPAT_NETWORK,
+  secret_password_lookup(SECRET_SERVICE_STORAGE_SCHEMA,
                          nullptr, // Cancellation object.
                          password_lookup_wrapper, // Callback
                          nullptr, // User data for callback.
@@ -156,7 +181,7 @@ void SecretServiceStorage::RemovePassword(const std::wstring& url,
   g_main_context_push_thread_default(main_context->gobj());
   m_mainLoop = Glib::MainLoop::create(main_context, false);
 
-  secret_password_clear(SECRET_SCHEMA_COMPAT_NETWORK,
+  secret_password_clear(SECRET_SERVICE_STORAGE_SCHEMA,
                         nullptr, // Cancellation object.
                         password_cleared_wrapper, // Callback
                         nullptr, // User data for callback.

@@ -56,20 +56,22 @@ class Configuration: public RegistryStorage
     ///
     inline Configuration* setUnmountAtExit(bool v)
     { m_unmountAtExit = v; return this; }
+#ifdef USE_SECRET_STORAGE
     ///
-    /// Извлечь значение параметра "использовать секретную службу".
+    /// Извлечь значение параметра "использовать безопасное хранилище".
     ///
-    /// @return Значение параметра "использовать секретную службу".
+    /// @return Значение параметра "использовать безопасное хранилище".
     ///
-    inline bool useSecretService() const { return m_useSecretService; }
+    inline bool useSecretStorage() const { return m_useSecretStorage; }
     ///
     /// Присвоить значение параметру "использовать безопасное хранилище".
     ///
     /// @param [in] v Новое значение.
     /// @return Указатель на синглет.
     ///
-    inline Configuration* setUseSecretService(bool v)
-    { m_useSecretService = v; return this; }
+    inline Configuration* setUseSecretStorage(bool v)
+    { m_useSecretStorage = v; return this; }
+#endif
 
     ///
     /// Сохранить конфигурацию плагина в реестр.
@@ -93,6 +95,8 @@ class Configuration: public RegistryStorage
 
     bool m_unmountAtExit; ///< Значение параметра "отключать ресурсы при
                           ///< выходе".
-    bool m_useSecretService; ///< Значение параметра "использовать безопасное
+#ifdef USE_SECRET_STORAGE
+    bool m_useSecretStorage; ///< Значение параметра "использовать безопасное
                              ///< хранилище".
+#endif
 };

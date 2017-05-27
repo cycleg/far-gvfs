@@ -7,13 +7,18 @@
 #include "Crypto.h"
 #endif
 
+#ifdef USE_SECRET_STORAGE
+#include "Configuration.h"
+#include "SecretServiceStorage.h"
+#endif
+
 #include "MountPointStorage.h"
 
 #define UUID_TEXT_SIZE (sizeof(uuid_t) * 2 + 5)
 
 const wchar_t* MountPointStorage::StoragePath = L"Resources";
 const wchar_t* MountPointStorage::StorageVersionKey = L"Version";
-const DWORD MountPointStorage::StorageVersion = 3;
+const DWORD MountPointStorage::StorageVersion = 4;
 
 MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
   RegistryStorage(registryFolder),
@@ -149,16 +154,32 @@ bool MountPointStorage::Save(const MountPoint& point)
   if (res != ERROR_SUCCESS) return false;
   std::vector<BYTE> l_password;
   DWORD l_askPassword = point.m_askPassword;
-#ifdef USE_OPENSSL
-  Encrypt(point.m_storageId, point.m_password, l_password);
-#else
-  Encrypt(point.m_password, l_password);
+  bool ret = true;
+#ifdef USE_SECRET_STORAGE
+  if (Configuration::Instance()->useSecretStorage())
+    {
+      SecretServiceStorage storage;
+      ret = ret &&
+            storage.SavePassword(point.m_resPath, point.m_user,
+                                 point.m_password);
+      // если используется безопасное хранилище, вместо пароля в реестр
+      // записывается пустая строка
+    }
+    else
 #endif
+    {
+#ifdef USE_OPENSSL
+      Encrypt(point.m_storageId, point.m_password, l_password);
+#else
+      Encrypt(point.m_password, l_password);
+#endif
+    }
   // save always in current storage version
-  bool ret = SetValue(hKey, L"Path", point.m_resPath) &&
-             SetValue(hKey, L"User", point.m_user)  &&
-             SetValue(hKey, L"Password", l_password) &&
-             SetValue(hKey, L"AskPassword", l_askPassword);
+  ret = ret &&
+        SetValue(hKey, L"Path", point.m_resPath) &&
+        SetValue(hKey, L"User", point.m_user)  &&
+        SetValue(hKey, L"Password", l_password) &&
+        SetValue(hKey, L"AskPassword", l_askPassword);
   WINPORT(RegCloseKey)(hKey);
   return ret;
 }
@@ -178,6 +199,11 @@ void MountPointStorage::Delete(const MountPoint& point) const
   WINPORT(RegCloseKey)(hKey);
   res = WINPORT(RegDeleteKey)(HKEY_CURRENT_USER, key.c_str());
   WINPORT(SetLastError)(res);
+#ifdef USE_SECRET_STORAGE
+  // удаляем всегда, во избежание
+  SecretServiceStorage storage;
+  storage.RemovePassword(point.m_resPath, point.m_user);
+#endif
 }
 
 void MountPointStorage::GenerateId(std::wstring& id)
@@ -230,6 +256,7 @@ void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) 
     case 1:
     case 2:
     case 3:
+    case 4:
       {
         unsigned int i = 0;
         wchar_t symbol = 0;
@@ -267,6 +294,7 @@ void MountPointStorage::Decrypt(const std::wstring& keydata,
   switch (m_version)
   {
     case 3:
+    case 4:
       crypto.decrypt(in, plain);
       for (const BYTE ch : plain) buf.push_back(ch);
       StrMB2Wide(buf, out);
@@ -328,6 +356,35 @@ bool MountPointStorage::Load(MountPoint& point) const
 #else
         Decrypt(l_password, point.m_password);
 #endif
+        point.m_askPassword = (l_askPassword == 1);
+      }
+      break;
+    case 4:
+      ret = ret &&
+            GetValue(hKey, L"AskPassword", l_askPassword);
+      if (ret)
+      {
+        point.m_resPath = l_resPath;
+        point.m_user = l_user;
+#ifdef USE_SECRET_STORAGE
+        if (Configuration::Instance()->useSecretStorage())
+          {
+            SecretServiceStorage storage;
+            // Здесь делаем ссылочную целостность слабой: если пароль не
+            // удалось извлечь из стороннего хранилища, это не означает
+            // порчу всей записи. Пусть пользователь введет пароль заново.
+            storage.LoadPassword(point.m_resPath, point.m_user,
+                                 point.m_password);
+          }
+          else
+#endif
+          {
+#ifdef USE_OPENSSL
+            Decrypt(point.m_storageId, l_password, point.m_password);
+#else
+            Decrypt(l_password, point.m_password);
+#endif
+          }
         point.m_askPassword = (l_askPassword == 1);
       }
       break;

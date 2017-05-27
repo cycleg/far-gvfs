@@ -80,7 +80,7 @@ if(OPENSSL_FOUND)
 endif(OPENSSL_FOUND)
 
 if(SECRET_FOUND AND SOUP_FOUND)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_SECRET_SERVICE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_SECRET_STORAGE)
     target_include_directories(${PROJECT_NAME} PRIVATE
         ${SECRET_INCLUDE_DIRS}
         ${SOUP_INCLUDE_DIRS}

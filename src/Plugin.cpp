@@ -112,8 +112,27 @@ int Plugin::configure(int item)
 {
     UNUSED(item)
 
+#ifdef USE_SECRET_STORAGE
+    bool changeStorage = Configuration::Instance()->useSecretStorage();
+#endif
     bool ret = ConfigurationEditDlg(m_pPsi);
-    if (ret) Configuration::Instance()->save();
+    if (ret)
+    {
+      Configuration::Instance()->save();
+#ifdef USE_SECRET_STORAGE
+      if (changeStorage != Configuration::Instance()->useSecretStorage())
+      {
+        // сменилось хранилище паролей, обновляем записи ресурсов
+        MountPointStorage storage(m_registryRoot);
+        for (auto& mountPoint : m_mountPoints)
+        {
+            storage.Delete(mountPoint.second);
+            // TODO: save error
+            storage.Save(mountPoint.second);
+        }
+      }
+#endif
+    }
     return ret;
 }
 

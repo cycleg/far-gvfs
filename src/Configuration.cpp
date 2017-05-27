@@ -4,8 +4,10 @@ Configuration* Configuration::instance = nullptr;
 
 Configuration::Configuration(const std::wstring& registryFolder):
   RegistryStorage(registryFolder),
-  m_unmountAtExit(true),
-  m_useSecretService(false)
+  m_unmountAtExit(true)
+#ifdef USE_SECRET_STORAGE
+  , m_useSecretStorage(false)
+#endif
 {
 }
 
@@ -27,7 +29,9 @@ void Configuration::save() const
   // ignore save errors
   if (res != ERROR_SUCCESS) return;
   SetValue(hKey, L"UnmountAtExit", m_unmountAtExit);
-  SetValue(hKey, L"UseSecretService", m_useSecretService);
+#ifdef USE_SECRET_STORAGE
+  SetValue(hKey, L"UseSecretStorage", m_useSecretStorage);
+#endif
   WINPORT(RegCloseKey)(hKey);
 }
 
@@ -51,8 +55,10 @@ void Configuration::load()
     DWORD l_bool;
     if (GetSetValue<DWORD>(hKey, L"UnmountAtExit", l_bool, m_unmountAtExit))
       m_unmountAtExit = l_bool;
-    if (GetSetValue<DWORD>(hKey, L"UseSecretService", l_bool, m_useSecretService))
-      m_useSecretService = l_bool;
+#ifdef USE_SECRET_STORAGE
+    if (GetSetValue<DWORD>(hKey, L"UseSecretStorage", l_bool, m_useSecretStorage))
+      m_useSecretStorage = l_bool;
+#endif
     WINPORT(RegCloseKey)(hKey);
   }
 }
