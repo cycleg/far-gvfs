@@ -33,13 +33,20 @@ find_package(PkgConfig REQUIRED MODULE)
 
 pkg_check_modules(GTKMM REQUIRED gtkmm-3.0)
 pkg_check_modules(UUID REQUIRED uuid)
+pkg_check_modules(SECRET libsecret-1)
+pkg_check_modules(SOUP libsoup-2.4)
 
 find_package(OpenSSL MODULE)
 
 if(OPENSSL_FOUND)
-  list(APPEND HEADERS src/Crypto.h)
-  list(APPEND SOURCES src/Crypto.cpp)
+    list(APPEND HEADERS src/Crypto.h)
+    list(APPEND SOURCES src/Crypto.cpp)
 endif(OPENSSL_FOUND)
+
+if(SECRET_FOUND AND SOUP_FOUND)
+    list(APPEND HEADERS src/SecretServiceStorage.h)
+    list(APPEND SOURCES src/SecretServiceStorage.cpp)
+endif(SECRET_FOUND AND SOUP_FOUND)
 
 add_library(${PROJECT_NAME} MODULE ${HEADERS} ${SOURCES})
 
@@ -67,10 +74,22 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 if(OPENSSL_FOUND)
-  target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_OPENSSL)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIR})
-  target_link_libraries(${PROJECT_NAME} ${OPENSSL_CRYPTO_LIBRARY})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_OPENSSL)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} ${OPENSSL_CRYPTO_LIBRARY})
 endif(OPENSSL_FOUND)
+
+if(SECRET_FOUND AND SOUP_FOUND)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_SECRET_SERVICE)
+    target_include_directories(${PROJECT_NAME} PRIVATE
+        ${SECRET_INCLUDE_DIRS}
+        ${SOUP_INCLUDE_DIRS}
+    )
+    target_link_libraries(${PROJECT_NAME}
+        ${SECRET_LIBRARIES}
+        ${SOUP_LIBRARIES}
+    )
+endif(SECRET_FOUND AND SOUP_FOUND)
 
 set_target_properties(${PROJECT_NAME}
   PROPERTIES
