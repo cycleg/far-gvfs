@@ -220,18 +220,20 @@ bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint)
 
 bool ConfigurationEditDlg(PluginStartupInfo& info)
 {
-    const int DIALOG_WIDTH = 50;
-    const int DIALOG_HEIGHT = 7;
+    const int DIALOG_WIDTH = 56;
+    const int DIALOG_HEIGHT = 8;
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
           MConfigTitle, L"", 0 },
 
         { DI_CHECKBOX, 4, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
           0, 0, MConfigUnmountAtExit, L"", 0 },
+        { DI_CHECKBOX, 4, 3, 0, 3, 0, Configuration::Instance()->useSecretService(),
+          0, 0, MConfigUseSecretService, L"", 0 },
 
-        { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 1,
+        { DI_BUTTON, 0, 5, 0, 5, 0, 0, DIF_CENTERGROUP, 1,
           MOk, L"", 0 },
-        { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 0,
+        { DI_BUTTON, 0, 5, 0, 5, 0, 0, DIF_CENTERGROUP, 0,
           MCancel, L"", 0 }
     };
     std::vector<FarDialogItem> dialogItems;
@@ -244,6 +246,7 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
     int ret = info.DialogRun(hDlg);
     // get user input
     bool l_unmountAtExit = DLG_GET_CHECKBOX(info, hDlg, 1);
+    bool l_useSecretService = DLG_GET_CHECKBOX(info, hDlg, 2);
     info.DialogFree(hDlg);
     startupInfo = nullptr;
     // check user input
@@ -252,6 +255,7 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
         return false;
     }
     Configuration::Instance()->setUnmountAtExit(l_unmountAtExit);
+    Configuration::Instance()->setUseSecretService(l_useSecretService);
     return true;
 }
 

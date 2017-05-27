@@ -33,6 +33,7 @@ enum LngStringsID
 
   MConfigTitle,
   MConfigUnmountAtExit,
+  MConfigUseSecretService,
   MConfigAddToDisksMenu,
   MConfigDisksMenuDigit,
   MConfigAddToPluginsMenu,
