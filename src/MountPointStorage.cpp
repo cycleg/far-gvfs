@@ -160,8 +160,7 @@ bool MountPointStorage::Save(const MountPoint& point)
     {
       SecretServiceStorage storage;
       ret = ret &&
-            storage.SavePassword(point.m_resPath, point.m_user,
-                                 point.m_password);
+            storage.SavePassword(point.m_storageId, point.m_password);
       // если используется безопасное хранилище, вместо пароля в реестр
       // записывается пустая строка
     }
@@ -202,7 +201,7 @@ void MountPointStorage::Delete(const MountPoint& point) const
 #ifdef USE_SECRET_STORAGE
   // удаляем всегда, во избежание
   SecretServiceStorage storage;
-  storage.RemovePassword(point.m_resPath, point.m_user);
+  storage.RemovePassword(point.m_storageId);
 #endif
 }
 
@@ -373,8 +372,7 @@ bool MountPointStorage::Load(MountPoint& point) const
             // Здесь делаем ссылочную целостность слабой: если пароль не
             // удалось извлечь из стороннего хранилища, это не означает
             // порчу всей записи. Пусть пользователь введет пароль заново.
-            storage.LoadPassword(point.m_resPath, point.m_user,
-                                 point.m_password);
+            storage.LoadPassword(point.m_storageId, point.m_password);
           }
           else
 #endif

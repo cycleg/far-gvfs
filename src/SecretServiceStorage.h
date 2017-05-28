@@ -26,8 +26,8 @@
 ///
 /// Пароли помещаются в коллекцию по умолчанию (SECRET_COLLECTION_DEFAULT) по
 /// внутренней схеме (SECRET_SERVICE_STORAGE_SCHEMA). Ключом для поиска пароля
-/// в коллекции выступают имя пользователя для аутентификации на
-/// ресурсе, сервер и протокол из URL ресурса.
+/// в коллекции идентификатор ресурса, тот же самый, что использует
+/// MountPointStorage.
 ///
 /// Хотя внутри операции выполняются асинхронно, интерфейс самого класса --
 /// синхронный. После завершения одной из трех вышеуказанных операций в этом
@@ -45,36 +45,31 @@ class SecretServiceStorage
     SecretServiceStorage();
 
     ///
-    /// Сохранить пароль для данного URL в связке.
+    /// Сохранить пароль для данного ID.
     ///
-    /// @param [in] url URL ресурса.
-    /// @param [in] user Имя пользователя.
+    /// @param [in] id Идентификатор ресурса.
     /// @param [in] password Сохраняемый пароль.
     /// @return Результат операции.
     ///
     /// Возвращает false, если сохранить не удалось.
     ///
-    bool SavePassword(const std::wstring& url, const std::wstring& user,
-                      const std::wstring& password);
+    bool SavePassword(const std::wstring& id, const std::wstring& password);
     ///
-    /// Найти пароль для данного URL в связке.
+    /// Найти пароль для данного ID.
     ///
-    /// @param [in] url URL ресурса.
-    /// @param [in] user Имя пользователя.
+    /// @param [in] id Идентификатор ресурса.
     /// @param [out] password Найденный пароль.
     /// @return Результат операции.
     ///
     /// Возвращает false, если пароль не найден, в password -- пустая строка.
     ///
-    bool LoadPassword(const std::wstring& url, const std::wstring& user,
-                      std::wstring& password);
+    bool LoadPassword(const std::wstring& id, std::wstring& password);
     ///
-    /// Удалить из связки пароль для данного URL.
+    /// Удалить из коллекции пароль для данного ID.
     ///
-    /// @param [in] url URL ресурса.
-    /// @param [in] user Имя пользователя.
+    /// @param [in] id Идентификатор ресурса.
     ///
-    void RemovePassword(const std::wstring& url, const std::wstring& user);
+    void RemovePassword(const std::wstring& id);
 
   private:
     ///

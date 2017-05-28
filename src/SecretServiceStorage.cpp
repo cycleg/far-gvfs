@@ -6,7 +6,6 @@
  */
 #include <iostream>
 #include <functional>
-#include <libsoup/soup.h> // URI parser
 #include <utils.h> // far2l/utils
 #include "SecretServiceStorage.h"
 
@@ -52,9 +51,7 @@ const SecretSchema* SecretServiceStorageSchema()
     static const SecretSchema the_schema = {
         "org.far2l.gvfspanel.secure.storage.password", SECRET_SCHEMA_NONE,
         {
-            {  "user", SECRET_SCHEMA_ATTRIBUTE_STRING },
-            {  "server", SECRET_SCHEMA_ATTRIBUTE_STRING },
-            {  "protocol", SECRET_SCHEMA_ATTRIBUTE_STRING },
+            {  "id", SECRET_SCHEMA_ATTRIBUTE_STRING }, ///< MountPoint storage ID
             {  "NULL", SECRET_SCHEMA_ATTRIBUTE_STRING },
         }
     };
@@ -75,14 +72,11 @@ SecretServiceStorage::SecretServiceStorage(): m_result(false)
                                        this, _1, _2, _3);
 }
 
-bool SecretServiceStorage::SavePassword(const std::wstring& url,
-                                       const std::wstring& user,
+bool SecretServiceStorage::SavePassword(const std::wstring& id,
                                        const std::wstring& password)
 {
-  std::string uriBuf(StrWide2MB(url)),
-              userBuf(StrWide2MB(user)),
+  std::string idBuf(StrWide2MB(id)),
               passwordBuf(StrWide2MB(password));
-  SoupURI* uri = soup_uri_new(uriBuf.c_str());
 
   m_password.clear();
   m_result = false;
@@ -108,9 +102,7 @@ bool SecretServiceStorage::SavePassword(const std::wstring& url,
                         nullptr, // User data for callback.
 
                         // These are the attributes.
-                        "user", userBuf.c_str(), 
-                        "server", soup_uri_get_host(uri),
-                        "protocol", soup_uri_get_scheme(uri),
+                        "id", idBuf.c_str(),
 
                         nullptr); // Always end with NULL.
 
@@ -124,17 +116,13 @@ bool SecretServiceStorage::SavePassword(const std::wstring& url,
   // pair...
   // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает assert.
   g_main_context_pop_thread_default(main_context->gobj());
-  soup_uri_free(uri);
   return m_result;
 }
 
-bool SecretServiceStorage::LoadPassword(const std::wstring& url,
-                                       const std::wstring& user,
+bool SecretServiceStorage::LoadPassword(const std::wstring& id,
                                        std::wstring& password)
 {
-  std::string uriBuf(StrWide2MB(url)),
-              userBuf(StrWide2MB(user));
-  SoupURI* uri = soup_uri_new(uriBuf.c_str());
+  std::string idBuf(StrWide2MB(id));
 
   m_password.clear();
   m_result = false;
@@ -151,14 +139,11 @@ bool SecretServiceStorage::LoadPassword(const std::wstring& url,
                          nullptr, // User data for callback.
 
                          // These are the attributes.
-                         "user", userBuf.c_str(), 
-                         "server", soup_uri_get_host(uri),
-                         "protocol", soup_uri_get_scheme(uri),
+                         "id", idBuf.c_str(),
 
                          nullptr); // Always end with NULL.
   m_mainLoop->run();
   g_main_context_pop_thread_default(main_context->gobj());
-  soup_uri_free(uri);
   if (m_result)
   {
     StrMB2Wide(m_password, password);
@@ -166,12 +151,9 @@ bool SecretServiceStorage::LoadPassword(const std::wstring& url,
   return m_result;
 }
 
-void SecretServiceStorage::RemovePassword(const std::wstring& url,
-                                         const std::wstring& user)
+void SecretServiceStorage::RemovePassword(const std::wstring& id)
 {
-  std::string uriBuf(StrWide2MB(url)),
-              userBuf(StrWide2MB(user));
-  SoupURI* uri = soup_uri_new(uriBuf.c_str());
+  std::string idBuf(StrWide2MB(id));
 
   m_password.clear();
   m_result = false;
@@ -187,14 +169,11 @@ void SecretServiceStorage::RemovePassword(const std::wstring& url,
                         nullptr, // User data for callback.
 
                         // These are the attributes.
-                        "user", userBuf.c_str(), 
-                        "server", soup_uri_get_host(uri),
-                        "protocol", soup_uri_get_scheme(uri),
+                        "id", idBuf.c_str(),
 
                         nullptr); // Always end with NULL.
   m_mainLoop->run();
   g_main_context_pop_thread_default(main_context->gobj());
-  soup_uri_free(uri);
 }
 
 void SecretServiceStorage::onPasswordStored(GObject* source,
