@@ -77,7 +77,8 @@ bool ConfigurationEditDlg(PluginStartupInfo& info);
 /// @param [in] DIALOG_WIDTH Ширина диалога.
 /// @param [in] message Запрос пользователю.
 /// @param [in] choices Варианты ответа
-/// @param [in, out] choice
+/// @param [in, out] choice На входе -- вариант ответа по умолчанию, на
+///                         выходе -- выбранный пользователем.
 /// @return false, если диалог прерван.
 ///
 /// @author cycleg
