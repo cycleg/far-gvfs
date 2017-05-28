@@ -5,7 +5,7 @@
 #include "LngStringIDs.h"
 #include "MountPoint.h"
 #include "plugin.hpp"
-#include "gvfsdlg.h"
+#include "dialogs.h"
 
 #define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, item, 0))
 #define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, item, 0) == BSTATE_CHECKED)

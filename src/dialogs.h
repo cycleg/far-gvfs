@@ -1,5 +1,5 @@
 ///
-/// @file gvfsdlg.h
+/// @file dialogs.h
 ///
 #pragma once
 

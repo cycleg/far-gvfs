@@ -1,7 +1,7 @@
 #include <string>
 #include <vector>
 #include <utils.h>
-#include "gvfsdlg.h"
+#include "dialogs.h"
 #include "TextFormatter.h"
 #include "UiCallbacks.h"
 

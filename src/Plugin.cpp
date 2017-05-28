@@ -1,7 +1,7 @@
 #include <iostream> // debug output
 #include <utils.h>
 #include "Configuration.h"
-#include "gvfsdlg.h"
+#include "dialogs.h"
 #include "GvfsService.h"
 #include "LngStringIDs.h"
 #include "MountPointStorage.h"
