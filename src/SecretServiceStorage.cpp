@@ -6,6 +6,8 @@
  */
 #include <iostream>
 #include <functional>
+#include <unordered_map>
+#include <mutex>
 #include <utils.h> // far2l/utils
 #include "SecretServiceStorage.h"
 
@@ -17,26 +19,93 @@ const char* RecordLabel = "Far-gvfs password record";
 
 namespace {
 
-std::function<void(GObject*, GAsyncResult*, gpointer)>
-  password_stored_callback, password_lookup_callback,
-  password_cleared_callback;
+///
+/// @brief Таблица обратных вызовов для асинхронных операций с безопасным хранилищем.
+
+/// Обратные вызовы -- обращения к методам класса SecretServiceStorage для
+/// конкретного экземпляра этого класса. В конструкторе экземпляр
+/// SecretServiceStorage регистрируется в этой таблице, в деструкторе --
+/// удаляется из нее.
+///
+/// Для обеспечения потокобезопасности при манипуляциях с таблицей
+/// используется мутекс.
+///
+/// @author cycleg
+///
+class PasswordCallbacks
+{
+  public:
+    struct callbacks
+    {
+      std::function<void(GObject*, GAsyncResult*, gpointer)>
+        passwordStored, ///< обратный вызов для сохранения пароля
+        passwordLookup, ///< обратный вызов для поиска пароля
+        passwordCleared; ///< обратный вызов для удаления пароля
+    };
+
+    void registerObj(SecretServiceStorage* _this, callbacks& cb)
+    {
+      std::lock_guard<std::mutex> lck(m_mapMutex);
+      m_callbacks[_this] = cb;
+    }
+
+    void unregisterObj(SecretServiceStorage* _this)
+    {
+      std::lock_guard<std::mutex> lck(m_mapMutex);
+      auto i = m_callbacks.find(_this);
+      if (i != m_callbacks.end()) m_callbacks.erase(i);
+    }
+
+    void stored(GObject* source, GAsyncResult* result, gpointer user_data)
+    {
+      std::lock_guard<std::mutex> lck(m_mapMutex);
+      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
+      if (i != m_callbacks.end())
+        i->second.passwordStored(source, result, user_data);
+    }
+
+    void lookup(GObject* source, GAsyncResult* result, gpointer user_data)
+    {
+      std::lock_guard<std::mutex> lck(m_mapMutex);
+      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
+      if (i != m_callbacks.end())
+        i->second.passwordLookup(source, result, user_data);
+    }
+
+    void cleared(GObject* source, GAsyncResult* result, gpointer user_data)
+    {
+      std::lock_guard<std::mutex> lck(m_mapMutex);
+      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
+      if (i != m_callbacks.end())
+        i->second.passwordCleared(source, result, user_data);
+    }
+
+  private:
+    std::mutex m_mapMutex; ///< Мутекс таблицы обратных вызовов.
+    std::unordered_map<SecretServiceStorage*, callbacks>
+      m_callbacks; ///< Таблица обратных вызовов: ключ -- указатель на целевой
+                   ///< объект, методы которого будут вызываться.
+                                                                  
+};
+
+PasswordCallbacks callbacksRegistry;
 
 extern "C" void password_stored_wrapper(GObject* source, GAsyncResult* result,
                                         gpointer user_data)
 {
-  password_stored_callback(source, result, user_data);
+  callbacksRegistry.stored(source, result, user_data);
 }
 
 extern "C" void password_lookup_wrapper(GObject* source, GAsyncResult* result,
                                         gpointer user_data)
 {
-  password_lookup_callback(source, result, user_data);
+  callbacksRegistry.lookup(source, result, user_data);
 }
 
 extern "C" void password_cleared_wrapper(GObject* source, GAsyncResult* result,
                                          gpointer user_data)
 {
-  password_cleared_callback(source, result, user_data);
+  callbacksRegistry.cleared(source, result, user_data);
 }
 
 ///
@@ -64,12 +133,20 @@ const SecretSchema* SecretServiceStorageSchema()
 
 SecretServiceStorage::SecretServiceStorage(): m_result(false)
 {
-  password_stored_callback = std::bind(&SecretServiceStorage::onPasswordStored,
-                                       this, _1, _2, _3);
-  password_lookup_callback = std::bind(&SecretServiceStorage::onPasswordFound,
-                                       this, _1, _2, _3);
-  password_cleared_callback = std::bind(&SecretServiceStorage::onPasswordRemoved,
-                                       this, _1, _2, _3);
+  // регистрируем наши обратные вызовы
+  PasswordCallbacks::callbacks cb;
+  cb.passwordStored = std::bind(&SecretServiceStorage::onPasswordStored,
+                                this, _1, _2, _3);
+  cb.passwordLookup = std::bind(&SecretServiceStorage::onPasswordFound,
+                                this, _1, _2, _3);
+  cb.passwordCleared = std::bind(&SecretServiceStorage::onPasswordRemoved,
+                                 this, _1, _2, _3);
+  callbacksRegistry.registerObj(this, cb);
+}
+
+SecretServiceStorage::~SecretServiceStorage()
+{
+  callbacksRegistry.unregisterObj(this);
 }
 
 bool SecretServiceStorage::SavePassword(const std::wstring& id,
@@ -99,7 +176,7 @@ bool SecretServiceStorage::SavePassword(const std::wstring& id,
                         passwordBuf.c_str(), // The password itself.
                         nullptr, // Cancellation object.
                         password_stored_wrapper, // Callback
-                        nullptr, // User data for callback.
+                        this, // User data for callback.
 
                         // These are the attributes.
                         "id", idBuf.c_str(),
@@ -136,7 +213,7 @@ bool SecretServiceStorage::LoadPassword(const std::wstring& id,
   secret_password_lookup(SECRET_SERVICE_STORAGE_SCHEMA,
                          nullptr, // Cancellation object.
                          password_lookup_wrapper, // Callback
-                         nullptr, // User data for callback.
+                         this, // User data for callback.
 
                          // These are the attributes.
                          "id", idBuf.c_str(),
@@ -166,7 +243,7 @@ void SecretServiceStorage::RemovePassword(const std::wstring& id)
   secret_password_clear(SECRET_SERVICE_STORAGE_SCHEMA,
                         nullptr, // Cancellation object.
                         password_cleared_wrapper, // Callback
-                        nullptr, // User data for callback.
+                        this, // User data for callback.
 
                         // These are the attributes.
                         "id", idBuf.c_str(),
@@ -234,7 +311,7 @@ void SecretServiceStorage::onPasswordRemoved(GObject* source,
   UNUSED(source);
   UNUSED(user_data);
 
-  GError* error = NULL;
+  GError* error = nullptr;
   secret_password_clear_finish(result, &error);
   // отсутствие пароля -- не ошибка
   m_result = (error == nullptr);

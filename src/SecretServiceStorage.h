@@ -31,8 +31,7 @@
 ///
 /// Хотя внутри операции выполняются асинхронно, интерфейс самого класса --
 /// синхронный. После завершения одной из трех вышеуказанных операций в этом
-/// же экземпляре может быть запущена другая. Однако класс -- не
-/// реентерабельный!
+/// же экземпляре может быть запущена другая.
 ///
 /// @author cycleg
 ///
@@ -43,6 +42,10 @@ class SecretServiceStorage
     /// Конструктор.
     ///
     SecretServiceStorage();
+    ///
+    /// Деструктор.
+    ///
+    ~SecretServiceStorage();
 
     ///
     /// Сохранить пароль для данного ID.
@@ -77,7 +80,7 @@ class SecretServiceStorage
     ///
     /// @param [in] source Объект, инициировавший асинхронную операцию.
     /// @param [in] result Результат операции.
-    /// @param [in] user_data В текущей реализации всегда nullptr.
+    /// @param [in] user_data В текущей реализации this.
     ///
     void onPasswordStored(GObject* source, GAsyncResult* result,
                           gpointer user_data);
@@ -86,7 +89,7 @@ class SecretServiceStorage
     ///
     /// @param [in] source Объект, инициировавший асинхронную операцию.
     /// @param [in] result Результат операции.
-    /// @param [in] user_data В текущей реализации всегда nullptr.
+    /// @param [in] user_data В текущей реализации this.
     ///
     void onPasswordFound(GObject* source, GAsyncResult* result,
                          gpointer user_data);
@@ -95,7 +98,7 @@ class SecretServiceStorage
     ///
     /// @param [in] source Объект, инициировавший асинхронную операцию.
     /// @param [in] result Результат операции.
-    /// @param [in] user_data В текущей реализации всегда nullptr.
+    /// @param [in] user_data В текущей реализации this.
     ///
     void onPasswordRemoved(GObject* source, GAsyncResult* result,
                            gpointer user_data);
