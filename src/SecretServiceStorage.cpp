@@ -4,6 +4,7 @@
  *  Created on: 26.05.2017
  *      Author: cycleg
  */
+#include <atomic>
 #include <iostream>
 #include <functional>
 #include <unordered_map>
@@ -23,30 +24,67 @@ namespace {
 /// @brief Таблица обратных вызовов для асинхронных операций с безопасным хранилищем.
 
 /// Обратные вызовы -- обращения к методам класса SecretServiceStorage для
-/// конкретного экземпляра этого класса. В конструкторе экземпляр
-/// SecretServiceStorage регистрируется в этой таблице, в деструкторе --
-/// удаляется из нее.
+/// конкретного экземпляра этого класса. В конструкторе SecretServiceStorage
+/// экземпляр регистрируется в этой таблице, в деструкторе -- удаляется из нее.
 ///
-/// Для обеспечения потокобезопасности при манипуляциях с таблицей
-/// используется мутекс.
+/// При манипуляциях с таблицей потокобезопасность обеспечивается стратегией
+/// "один писатель, много читателей". Попытки зарегистрировать объект в таблице
+/// или удалить из нее задерживаются до тех пор, пока не завершатся все
+/// текущие обратные вызовы. Эти операции выполняются за фиксированное время,
+/// в отличие от обратных вызовов. Обратные вызовы могут выполняться
+/// параллельно.
 ///
 /// @author cycleg
 ///
 class PasswordCallbacks
 {
+  friend class ::SecretServiceStorage; ///< Только экземпляры
+                                       ///< SecretServiceStorage могут
+                                       ///< манипулировать таблицей.
+
   public:
+    PasswordCallbacks(): m_readers(0), m_lock(m_mapMutex, std::defer_lock)
+    {
+    }
+
+    void stored(GObject* source, GAsyncResult* result, gpointer user_data)
+    {
+      if (m_readers++ == 0) m_lock.lock();
+      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
+      if (i != m_callbacks.end()) i->second.stored(source, result, user_data);
+      if (--m_readers == 0) m_lock.unlock();
+    }
+
+    void lookup(GObject* source, GAsyncResult* result, gpointer user_data)
+    {
+      if (m_readers++ == 0) m_lock.lock();
+      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
+      if (i != m_callbacks.end()) i->second.lookup(source, result, user_data);
+      if (--m_readers == 0) m_lock.unlock();
+    }
+
+    void cleared(GObject* source, GAsyncResult* result, gpointer user_data)
+    {
+      if (m_readers++ == 0) m_lock.lock();
+      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
+      if (i != m_callbacks.end()) i->second.cleared(source, result, user_data);
+      if (--m_readers == 0) m_lock.unlock();
+    }
+
+  private:
     struct callbacks
     {
       std::function<void(GObject*, GAsyncResult*, gpointer)>
-        passwordStored, ///< обратный вызов для сохранения пароля
-        passwordLookup, ///< обратный вызов для поиска пароля
-        passwordCleared; ///< обратный вызов для удаления пароля
+        stored, ///< обратный вызов для сохранения пароля
+        lookup, ///< обратный вызов для поиска пароля
+        cleared; ///< обратный вызов для удаления пароля
     };
 
     void registerObj(SecretServiceStorage* _this, callbacks& cb)
     {
+      // ожидаем, когда завершатся все текущие обратные вызовы
       std::lock_guard<std::mutex> lck(m_mapMutex);
-      m_callbacks[_this] = cb;
+      m_callbacks.emplace(_this, cb);
     }
 
     void unregisterObj(SecretServiceStorage* _this)
@@ -56,32 +94,13 @@ class PasswordCallbacks
       if (i != m_callbacks.end()) m_callbacks.erase(i);
     }
 
-    void stored(GObject* source, GAsyncResult* result, gpointer user_data)
-    {
-      std::lock_guard<std::mutex> lck(m_mapMutex);
-      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
-      if (i != m_callbacks.end())
-        i->second.passwordStored(source, result, user_data);
-    }
-
-    void lookup(GObject* source, GAsyncResult* result, gpointer user_data)
-    {
-      std::lock_guard<std::mutex> lck(m_mapMutex);
-      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
-      if (i != m_callbacks.end())
-        i->second.passwordLookup(source, result, user_data);
-    }
-
-    void cleared(GObject* source, GAsyncResult* result, gpointer user_data)
-    {
-      std::lock_guard<std::mutex> lck(m_mapMutex);
-      auto i = m_callbacks.find(static_cast<SecretServiceStorage*>(user_data));
-      if (i != m_callbacks.end())
-        i->second.passwordCleared(source, result, user_data);
-    }
-
-  private:
-    std::mutex m_mapMutex; ///< Мутекс таблицы обратных вызовов.
+    std::atomic_int m_readers; ///< Число потоков-читателей таблицы (извлекших
+                               ///< указатели на вызовы).
+    std::mutex m_mapMutex; ///< Мутекс на запись таблицы обратных вызовов.
+                           ///< Заперт, если есть хотя бы один читатель таблицы
+                           ///< или имеется писатель в таблицу.
+    std::unique_lock<std::mutex> m_lock; ///< Закрыт, если есть хотя бы один
+                                         ///< читатель таблицы.
     std::unordered_map<SecretServiceStorage*, callbacks>
       m_callbacks; ///< Таблица обратных вызовов: ключ -- указатель на целевой
                    ///< объект, методы которого будут вызываться.
@@ -135,12 +154,12 @@ SecretServiceStorage::SecretServiceStorage(): m_result(false)
 {
   // регистрируем наши обратные вызовы
   PasswordCallbacks::callbacks cb;
-  cb.passwordStored = std::bind(&SecretServiceStorage::onPasswordStored,
-                                this, _1, _2, _3);
-  cb.passwordLookup = std::bind(&SecretServiceStorage::onPasswordFound,
-                                this, _1, _2, _3);
-  cb.passwordCleared = std::bind(&SecretServiceStorage::onPasswordRemoved,
-                                 this, _1, _2, _3);
+  cb.stored = std::bind(&SecretServiceStorage::onPasswordStored, this, _1, _2,
+                        _3);
+  cb.lookup = std::bind(&SecretServiceStorage::onPasswordFound, this, _1, _2,
+                        _3);
+  cb.cleared = std::bind(&SecretServiceStorage::onPasswordRemoved, this, _1,
+                         _2, _3);
   callbacksRegistry.registerObj(this, cb);
 }
 
