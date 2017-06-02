@@ -28,5 +28,8 @@
 *.out
 *.app
 
+# CMake binary directory
+build/
+
 # Doxygen documentaion
 docs/

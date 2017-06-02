@@ -1,5 +1,8 @@
 #include <iostream>
+#include <atomic>
 #include <functional>
+#include <mutex>
+#include <unordered_map>
 #include "UiCallbacks.h"
 #include "GvfsService.h"
 
@@ -19,29 +22,124 @@
 // проверить работоспособность Gio::MountOperation, а затем перейти к условной
 // компиляции GvfsService в зависимости от версии glibmm.
 
+extern "C" void ask_question_wrapper(GMountOperation* op, char* message,
+                                     char** choices, gpointer user_data);
+extern "C" void ask_password_wrapper(GMountOperation* op, const char* message,
+                                     const char* default_user,
+                                     const char* default_domain,
+                                     GAskPasswordFlags flags);
+
 namespace {
 
-std::function<void(GMountOperation*, char*, char**, gpointer)>
-    ask_question_callback;
+///
+/// @brief Таблица слотов для обработки сигналов процедуры монтирования ресурса.
+
+/// Здесь слоты -- обращения к методам класса GvfsService при обработке
+/// сигналов от GMountOperation через C-интерфейс (не C++!). Перед запуском
+/// монтирования экземпляр GMountOperation регистрируется в этой таблице, по
+/// завершению -- удаляется из нее.
+///
+/// При манипуляциях с таблицей потокобезопасность обеспечивается стратегией
+/// "один писатель, много читателей". Попытки зарегистрировать объект в таблице
+/// или удалить из нее задерживаются до тех пор, пока не завершатся все
+/// запущенные слоты. Эти операции выполняются за фиксированное время, в
+/// отличие от слотов. Слоты могут запускаться параллельно.
+///
+/// @author cycleg
+///
+class MountCallbacks
+{
+    friend class ::GvfsService; ///< Только экземпляры GvfsService могут
+                                ///< манипулировать таблицей.
+
+  public:
+    MountCallbacks(): m_readers(0), m_lock(m_mapMutex, std::defer_lock)
+    {
+    }
+
+    void onAskQuestion(GMountOperation* op, char* message, char** choices,
+                       gpointer user_data)
+    {
+        if (m_readers++ == 0) m_lock.lock();
+        auto i = m_slots.find(op);
+        if (i != m_slots.end())
+            i->second.onAskQuestion(op, message, choices, user_data);
+        if (--m_readers == 0) m_lock.unlock();
+    }
+
+    void onAskPassword(GMountOperation* op, const char* message,
+                       const char* default_user, const char* default_domain,
+                       GAskPasswordFlags flags)
+    {
+        if (m_readers++ == 0) m_lock.lock();
+        auto i = m_slots.find(op);
+        if (i != m_slots.end())
+            i->second.onAskPassword(op, message, default_user, default_domain,
+                                    flags);
+        if (--m_readers == 0) m_lock.unlock();
+    }
+
+  private:
+    struct slots
+    {
+        std::function<void(GMountOperation*, char*, char**, gpointer)>
+            onAskQuestion; ///< слот для сигнала "ask_question"
+        std::function<void(GMountOperation* op, const char* message,
+                           const char* default_user,
+                           const char* default_domain,
+                           GAskPasswordFlags flags)>
+            onAskPassword; ///< слот для сигнала "ask_password"
+    };
+
+    void connect(GMountOperation* op, slots& cb)
+    {
+        // ожидаем, когда отработают все вызванные слоты
+        std::lock_guard<std::mutex> lck(m_mapMutex);
+        m_slots.emplace(op, cb);
+        g_signal_connect(op, "ask_question", G_CALLBACK(ask_question_wrapper),
+                         nullptr);
+        g_signal_connect(op, "ask_password", G_CALLBACK(ask_password_wrapper),
+                         nullptr);
+    }
+
+    void disconnect(GMountOperation* op)
+    {
+        std::lock_guard<std::mutex> lck(m_mapMutex);
+        auto i = m_slots.find(op);
+        if (i != m_slots.end()) m_slots.erase(i);
+    }
+
+    std::atomic_int m_readers; ///< Число потоков-читателей таблицы (извлекших
+                               ///< указатели на вызовы).
+    std::mutex m_mapMutex; ///< Мутекс на запись таблицы обратных вызовов.
+                           ///< Заперт, если есть хотя бы один читатель таблицы
+                           ///< или имеется писатель в таблицу.
+    std::unique_lock<std::mutex> m_lock; ///< Закрыт, если есть хотя бы один
+                                         ///< читатель таблицы.
+    std::unordered_map<GMountOperation*, slots>
+        m_slots; ///< Таблица слотов: ключ -- указатель на целевой объект,
+                 ///< который будет обрабатываться.
+                                                                  
+};
+
+MountCallbacks mountCallbacksRegistry;
+
 extern "C" void ask_question_wrapper(GMountOperation* op,
                                      char* message, char** choices,
                                      gpointer user_data)
 {
-    ask_question_callback(op, message, choices, user_data);
+    mountCallbacksRegistry.onAskQuestion(op, message, choices, user_data);
 }
 
 
-std::function<void(GMountOperation* op, const char* message,
-                   const char* default_user, const char* default_domain,
-                   GAskPasswordFlags flags)>
-    ask_password_callback;
 extern "C" void ask_password_wrapper(GMountOperation* op,
                                      const char* message,
                                      const char* default_user,
                                      const char* default_domain,
                                      GAskPasswordFlags flags)
 {
-    ask_password_callback(op, message, default_user, default_domain, flags);
+    mountCallbacksRegistry.onAskPassword(op, message, default_user,
+                                         default_domain, flags);
 }
 
 } // anonymous namespace
@@ -93,14 +191,12 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
                   _3, _4)
     );
 #endif
-    ask_question_callback = std::bind(&GvfsService::on_ask_question, this,
-                                      _1, _2, _3, _4);
-    g_signal_connect(mount_operation->gobj(), "ask_question",
-                     G_CALLBACK(ask_question_wrapper), nullptr);
-    ask_password_callback = std::bind(&GvfsService::on_ask_password, this,
-                                      _1, _2, _3, _4, _5);
-    g_signal_connect(mount_operation->gobj(), "ask_password",
-                     G_CALLBACK(ask_password_wrapper), nullptr);
+    MountCallbacks::slots sl;
+    sl.onAskQuestion = std::bind(&GvfsService::on_ask_question, this, _1, _2,
+                                 _3, _4);
+    sl.onAskPassword = std::bind(&GvfsService::on_ask_password, this, _1, _2,
+                                 _3, _4, _5);
+    mountCallbacksRegistry.connect(mount_operation->gobj(), sl);
     mount_operation->signal_aborted().connect(
         std::bind(&GvfsService::on_aborted, this, mount_operation)
     );
@@ -120,6 +216,7 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         {
             m_mainLoop->run();
         }
+        mountCallbacksRegistry.disconnect(mount_operation->gobj());
         // Из руководства:
         // In some cases however, you may want to schedule a single operation
         // in a non-default context, or temporarily use a non-default context
@@ -145,6 +242,7 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         // Сплошные загадки...
         std::cerr << "GvfsService::mount() Glib::Error: " << ex.what().raw() << std::endl
                   << "m_mountCount: " << m_mountCount << std::endl;
+        mountCallbacksRegistry.disconnect(mount_operation->gobj());
         if (m_exception.get() == nullptr)
         {
           m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
