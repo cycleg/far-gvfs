@@ -279,8 +279,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         {
             unmountResource(it->second);
             m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
-            // redraw screen
-            m_pPsi.AdvControl(m_pPsi.ModuleNumber, ACTL_REDRAWALL, NULL);
+            m_pPsi.Control(Plugin, FCTL_REDRAWPANEL, 0, 0);
         }
         return 1;
     }
@@ -289,8 +288,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         // refresh resources status
         checkResourcesStatus();
         m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
-        // redraw screen
-        m_pPsi.AdvControl(m_pPsi.ModuleNumber, ACTL_REDRAWALL, NULL);
+        m_pPsi.Control(Plugin, FCTL_REDRAWPANEL, 0, 0);
         return 1;
     }
     return 0; // all other keys left to far
