@@ -149,7 +149,7 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
         const wchar_t* msgItems[2];
         msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
         msgItems[1] = info.GetMsg(info.ModuleNumber, MResourcePathEmptyError);
-        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, NULL,
+        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, nullptr,
                      msgItems, ARRAYSIZE(msgItems), 0);
         return false;
     }
@@ -158,7 +158,7 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
         const wchar_t* msgItems[2];
         msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
         msgItems[1] = info.GetMsg(info.ModuleNumber, MPasswordWithoutUserError);
-        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, NULL,
+        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, nullptr,
                      msgItems, ARRAYSIZE(msgItems), 0);
         return false;
     }
@@ -167,7 +167,7 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
         const wchar_t* msgItems[2];
         msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
         msgItems[1] = info.GetMsg(info.ModuleNumber, MAnonymousConnectionPassword);
-        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, NULL,
+        info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, nullptr,
                      msgItems, ARRAYSIZE(msgItems), 0);
         return false;
     }
@@ -203,7 +203,7 @@ bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint)
 
     HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
                                   DIALOG_HEIGHT, L"Config", dialogItems.data(),
-                                  dialogItems.size(), 0, 0, NULL, 0);
+                                  dialogItems.size(), 0, 0, nullptr, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
     std::wstring l_password = DLG_GET_TEXTPTR(info, hDlg, 2);
@@ -259,7 +259,7 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
 
     HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
                                   DIALOG_HEIGHT, L"Config", dialogItems.data(),
-                                  dialogItems.size(), 0, 0, NULL, 0);
+                                  dialogItems.size(), 0, 0, nullptr, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
     bool l_unmountAtExit = DLG_GET_CHECKBOX(info, hDlg, 1);
@@ -340,7 +340,7 @@ bool AskQuestionDlg(PluginStartupInfo& info,
     startupInfo = &info;
     HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
                                   DIALOG_HEIGHT, L"Config", dialogItems.data(),
-                                  dialogItems.size(), 0, 0, NULL, 0);
+                                  dialogItems.size(), 0, 0, nullptr, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
     choice = DLG_GET_COMBOBOXPOS(info, hDlg, message.size());
