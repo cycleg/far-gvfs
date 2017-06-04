@@ -98,7 +98,7 @@ void Plugin::getPluginInfo(PluginInfo* info)
 
     static const wchar_t* PluginMenuStrings[1];
     PluginMenuStrings[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MGvfsPanel);
-    info->PluginMenuStrings = Opt.AddToPluginsMenu ? PluginMenuStrings : NULL;
+    info->PluginMenuStrings = Opt.AddToPluginsMenu ? PluginMenuStrings : nullptr;
     info->PluginMenuStringsNumber = Opt.AddToPluginsMenu ? ARRAYSIZE(PluginMenuStrings) : 0;
 
     static const wchar_t* PluginCfgStrings[1];
@@ -158,7 +158,7 @@ void Plugin::getOpenPluginInfo(HANDLE Plugin, OpenPluginInfo* pluginInfo)
     pluginInfo->PanelTitle = pluginPanelTitle;
     // panel modes
     static struct PanelMode PanelModesArray[10];
-    static const wchar_t* ColumnTitles[3] = { NULL };
+    static const wchar_t* ColumnTitles[3] = { nullptr };
     memset(&PanelModesArray, 0, sizeof(PanelModesArray));
     ColumnTitles[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
     ColumnTitles[2] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MUser);
@@ -229,11 +229,11 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         {
             if (it->second.isMounted())
             {
-                const wchar_t* msgItems[2] = { NULL };
+                const wchar_t* msgItems[2] = { nullptr };
                 msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
                 msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MFirstUnmountResource);
                 m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                               NULL, msgItems, ARRAYSIZE(msgItems), 0);
+                               nullptr, msgItems, ARRAYSIZE(msgItems), 0);
                 return 1;
             }
             if (EditResourceDlg(m_pPsi, it->second))
@@ -312,7 +312,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
         {
             if (!it->second.isMounted())
             {
-                const wchar_t* msgItems[2] = { NULL };
+                const wchar_t* msgItems[2] = { nullptr };
                 bool isMount = false;
                 HANDLE hScreen = nullptr;
                 if (it->second.getAskPassword())
@@ -326,7 +326,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                     GvfsService service(&callbacks);
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceMount);
                     msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
-                    m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems,
+                    m_pPsi.Message(m_pPsi.ModuleNumber, 0, nullptr, msgItems,
                                    ARRAYSIZE(msgItems), 0);
                     // для сообщения об ошибке
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MMountError);
@@ -337,7 +337,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                     std::wstring buf(StrMB2Wide(error.what().raw()));
                     msgItems[1] = buf.c_str();
                     m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                                   NULL, msgItems, ARRAYSIZE(msgItems), 0);
+                                   nullptr, msgItems, ARRAYSIZE(msgItems), 0);
                 }
                 m_pPsi.RestoreScreen(hScreen);
                 if (!isMount) return 0;
@@ -379,14 +379,13 @@ int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem* PanelItem, int itemsNumb
     UNUSED(Plugin)
     UNUSED(OpMode)
 
-    const wchar_t* msgItems[2] =
-    {
-        L"Delete selected mounts",
-        L"Do you really want to delete mount point?"
-    };
+    const wchar_t* msgItems[2] = { nullptr };
+    msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MDeleteResourceTitle);
+    msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MDeleteresourceConfirmation);
 
-    auto msgCode = m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_YESNO,
-                                  NULL, msgItems, ARRAYSIZE(msgItems), 0);
+    auto msgCode = m_pPsi.Message(m_pPsi.ModuleNumber,
+                                  FMSG_WARNING | FMSG_MB_YESNO, nullptr,
+                                  msgItems, ARRAYSIZE(msgItems), 0);
     // if no or canceled msg box, do nothing
     if ((msgCode == -1) || (msgCode == 1))
     {
@@ -485,7 +484,7 @@ void Plugin::updatePanelItems()
 
 void Plugin::unmountResource(MountPoint& point)
 {
-    const wchar_t* msgItems[2] = { NULL };
+    const wchar_t* msgItems[2] = { nullptr };
     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MUnmountError);
     try
     {
@@ -497,7 +496,7 @@ void Plugin::unmountResource(MountPoint& point)
         std::wstring buf(StrMB2Wide(error.what().raw()));
         msgItems[1] = buf.c_str();
         m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                       NULL, msgItems, ARRAYSIZE(msgItems), 0);
+                       nullptr, msgItems, ARRAYSIZE(msgItems), 0);
     }
 }
 
@@ -521,11 +520,11 @@ PluginPanelItem* Plugin::getPanelCurrentItem(HANDLE Plugin)
 void Plugin::checkResourcesStatus()
 {
     HANDLE hScreen = nullptr;
-    const wchar_t* msgItems[2] = { NULL };
+    const wchar_t* msgItems[2] = { nullptr };
     hScreen = m_pPsi.SaveScreen(0, 0, -1, -1);
     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceStatus);
     msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
-    m_pPsi.Message(m_pPsi.ModuleNumber, 0, NULL, msgItems,
+    m_pPsi.Message(m_pPsi.ModuleNumber, 0, nullptr, msgItems,
                    ARRAYSIZE(msgItems), 0);
     for (auto& mountPoint : m_mountPoints)
     {

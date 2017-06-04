@@ -79,5 +79,9 @@ enum LngStringsID
 
   MF7Bar,
   MShiftF8Bar,
+
+  MDeleteResourceTitle,
+  MDeleteresourceConfirmation,
+
   __LAST_LNG_ENTRY__
 };
