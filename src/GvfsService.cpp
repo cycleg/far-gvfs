@@ -1,5 +1,5 @@
-#include <iostream>
 #include <atomic>
+#include <iostream>
 #include <functional>
 #include <mutex>
 #include <unordered_map>
@@ -110,8 +110,8 @@ class MountCallbacks
     }
 
     std::atomic_int m_readers; ///< Число потоков-читателей таблицы (извлекших
-                               ///< указатели на вызовы).
-    std::mutex m_mapMutex; ///< Мутекс на запись таблицы обратных вызовов.
+                               ///< указатели на слоты).
+    std::mutex m_mapMutex; ///< Мутекс на запись таблицы слотов.
                            ///< Заперт, если есть хотя бы один читатель таблицы
                            ///< или имеется писатель в таблицу.
     std::unique_lock<std::mutex> m_lock; ///< Закрыт, если есть хотя бы один
@@ -145,7 +145,6 @@ extern "C" void ask_password_wrapper(GMountOperation* op,
 } // anonymous namespace
 
 GvfsService::GvfsService(UiCallbacks* uic) :
-    m_mountCount(0),
     m_uiCallbacks(uic)
 {
 }
@@ -156,6 +155,8 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
 {
     using namespace std::placeholders;
 
+    // какая-то операция в данном экземпляре уже запущена
+    if (m_mainLoop && m_mainLoop->is_running()) return false;
 std::cerr << "GvfsService::mount() " << resPath << std::endl;
     m_exception.reset();
     m_mountScheme.clear();
@@ -210,12 +211,7 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
                                        {
                                           this->mount_cb(result);
                                        });
-        m_mountCount++;
-std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::endl;
-        if (m_mountCount > 0)
-        {
-            m_mainLoop->run();
-        }
+        m_mainLoop->run();
         mountCallbacksRegistry.disconnect(mount_operation->gobj());
         // Из руководства:
         // In some cases however, you may want to schedule a single operation
@@ -240,8 +236,8 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
         // А здесь контекст потока восстанавливать не получается, и снова
         // из-за assert в Glib. Вероятно, это связано с "разматыванием" стека.
         // Сплошные загадки...
-        std::cerr << "GvfsService::mount() Glib::Error: " << ex.what().raw() << std::endl
-                  << "m_mountCount: " << m_mountCount << std::endl;
+        std::cerr << "GvfsService::mount() Glib::Error: " << ex.what().raw()
+                  << std::endl;
         mountCallbacksRegistry.disconnect(mount_operation->gobj());
         if (m_exception.get() == nullptr)
         {
@@ -256,6 +252,8 @@ std::cerr << "GvfsService::mount() inc m_mountCount: " << m_mountCount << std::e
 bool GvfsService::umount(const std::string &resPath)
     throw(GvfsServiceException)
 {
+    // какая-то операция в данном экземпляре уже запущена
+    if (m_mainLoop && m_mainLoop->is_running()) return false;
 std::cerr << "GvfsService::umount() " << resPath << std::endl;
     m_exception.reset();
 
@@ -275,18 +273,12 @@ std::cerr << "GvfsService::umount() " << resPath << std::endl;
                        {
                            l_unmounted = this->unmount_cb(result);
                        });
-        m_mountCount++;
-std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::endl;
-        if (m_mountCount > 0)
-        {
-            m_mainLoop->run();
-        }
-        
+        m_mainLoop->run();
     }
     catch (const Glib::Error& ex)
     {
-        std::cerr << "GvfsService::umount() Glib::Error: "<< ex.what().raw() << std::endl
-                  << "m_mountCount: " << m_mountCount << std::endl;
+        std::cerr << "GvfsService::umount() Glib::Error: "<< ex.what().raw()
+                  << std::endl;
         if (m_exception.get() == nullptr)
         {
           m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
@@ -318,6 +310,8 @@ std::cerr << "GvfsService::umount() inc m_mountCount: " << m_mountCount << std::
 
 bool GvfsService::mounted(const std::string& resPath)
 {
+    // какая-то операция в данном экземпляре уже запущена
+    if (m_mainLoop && m_mainLoop->is_running()) return false;
 std::cerr << "GvfsService::mounted() " << resPath << std::endl;
     m_exception.reset();
     m_mountScheme.clear();
@@ -336,12 +330,7 @@ std::cerr << "GvfsService::mounted() " << resPath << std::endl;
                                            {
                                                l_mount = this->find_mount_cb(result);
                                            });
-        m_mountCount++;
-std::cerr << "GvfsService::mounted() inc m_mountCount: " << m_mountCount << std::endl;
-        if (m_mountCount > 0)
-        {
-            m_mainLoop->run();
-        }
+        m_mainLoop->run();
         if (l_mount.operator->() != nullptr)
         {
             m_mountName = l_mount->get_name();
@@ -493,14 +482,7 @@ std::cerr << "GvfsService::mount_cb()" << std::endl;
         // fill exception
         m_exception = std::make_shared<GvfsServiceException>(ex.domain(), ex.code(), ex.what());
     }
-
-    m_mountCount--;
-std::cerr << "GvfsService::mount_cb() dec m_mountCount: " << m_mountCount << std::endl;
-
-    if (m_mountCount == 0)
-    {
-        m_mainLoop->quit();
-    }
+    m_mainLoop->quit();
 }
 
 bool GvfsService::unmount_cb(Glib::RefPtr<Gio::AsyncResult> &result)
@@ -517,14 +499,7 @@ bool GvfsService::unmount_cb(Glib::RefPtr<Gio::AsyncResult> &result)
         // fill exception
         m_exception = std::make_shared<GvfsServiceException>(ex.domain(), ex.code(), ex.what());
     }
-
-    m_mountCount--;
-std::cerr << "GvfsService::unmount_cb() dec m_mountCount: " << m_mountCount << std::endl;
-
-    if (m_mountCount == 0)
-    {
-        m_mainLoop->quit();
-    }
+    m_mainLoop->quit();
     return success;
 }
 
@@ -542,13 +517,6 @@ std::cerr << "GvfsService::find_mount_cb()" << std::endl;
         // fill exception
         m_exception = std::make_shared<GvfsServiceException>(ex.domain(), ex.code(), ex.what());
     }
-
-    m_mountCount--;
-std::cerr << "GvfsService::find_mount_cb() dec m_mountCount: " << m_mountCount << std::endl;
-
-    if (m_mountCount == 0)
-    {
-        m_mainLoop->quit();
-    }
+    m_mainLoop->quit();
     return l_mount;
 }
