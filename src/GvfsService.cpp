@@ -226,9 +226,9 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
         m_mountName = m_file->find_enclosing_mount()->get_name();
         m_mountPath = m_file->get_path();
         m_mountScheme = m_file->get_uri_scheme();
-        std::cout << "GvfsService::mount() name: " << m_mountName << std::endl;
-        std::cout << "GvfsService::mount() path: " << m_mountPath << std::endl;
-        std::cout << "GvfsService::mount() scheme: " << m_mountScheme << std::endl;
+        std::cout << "GvfsService::mount() name: " << m_mountName << std::endl
+                  << "GvfsService::mount() path: " << m_mountPath << std::endl
+                  << "GvfsService::mount() scheme: " << m_mountScheme << std::endl;
         l_mounted = true;
     }
     catch (const Glib::Error& ex)
@@ -336,12 +336,9 @@ std::cerr << "GvfsService::mounted() " << resPath << std::endl;
             m_mountName = l_mount->get_name();
             m_mountPath = m_file->get_path();
             m_mountScheme = m_file->get_uri_scheme();
-            std::cout << "GvfsService::mounted() name: " << m_mountName
-                      << std::endl;
-            std::cout << "GvfsService::mounted() path: " << m_mountPath
-                      << std::endl;
-            std::cout << "GvfsService::mounted() scheme: " << m_mountScheme
-                      << std::endl;
+            std::cout << "GvfsService::mounted() name: " << m_mountName << std::endl
+                      << "GvfsService::mounted() path: " << m_mountPath << std::endl
+                      << "GvfsService::mounted() scheme: " << m_mountScheme << std::endl;
         }
     }
     catch (const Glib::Error& ex)
@@ -360,8 +357,8 @@ void GvfsService::on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_opera
                                   const Glib::ustring& msg,
                                   const Glib::StringArrayHandle& choices)
 {
-std::cerr << "on signal_ask_question: " << msg.raw() << std::endl;
-std::cerr << "choices:" << std::endl;
+std::cerr << "on signal_ask_question: " << msg.raw() << std::endl
+          << "choices:" << std::endl;
 int i = 0;
 for (const auto& choice : choices) std::cerr << i++ << " " << choice.raw() << std::endl;
     if (m_uiCallbacks)
@@ -422,8 +419,8 @@ void GvfsService::on_ask_question(GMountOperation* op, char* message,
                                   char** choices, gpointer user_data)
 {
     (void)user_data;
-std::cerr << "on signal_ask_question: " << message << std::endl;
-std::cerr << "choices:" << std::endl;
+std::cerr << "on signal_ask_question: " << message << std::endl
+          << "choices:" << std::endl;
 int i = 0;
 char** choice = choices;
 while (*choice)
