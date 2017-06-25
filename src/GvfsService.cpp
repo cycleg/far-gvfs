@@ -223,6 +223,11 @@ std::cerr << "GvfsService::mount() " << resPath << std::endl;
         // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает
         // assert.
         g_main_context_pop_thread_default(main_context->gobj());
+        // Если адрес уже подключен (пользователь завел два ресурса про один
+        // и тот же сервер), то m_file->find_enclosing_mount() завершится без
+        // исключения, и ошибка "already mount" будет проигнорирована, что
+        // правильно. В случае других ошибок монтирования здесь возникнет
+        // исключение.
         m_mountName = m_file->find_enclosing_mount()->get_name();
         m_mountPath = m_file->get_path();
         m_mountScheme = m_file->get_uri_scheme();
