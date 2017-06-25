@@ -3,6 +3,7 @@
 #include "Configuration.h"
 #include "dialogs.h"
 #include "GvfsService.h"
+#include "GvfsServiceMonitor.h"
 #include "LngStringIDs.h"
 #include "MountPointStorage.h"
 #include "UiCallbacks.h"
@@ -63,10 +64,12 @@ void Plugin::setStartupInfo(const PluginStartupInfo* psi)
     // load mount points from registry
     MountPointStorage storage(m_registryRoot);
     storage.LoadAll(m_mountPoints);
+    GvfsServiceMonitor::instance().run();
 }
 
 void Plugin::exitFar()
 {
+    GvfsServiceMonitor::instance().quit();
     if (Configuration::Instance()->unmountAtExit())
     {
         // unmount all VFS, mounted in current session

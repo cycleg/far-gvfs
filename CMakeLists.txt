@@ -5,6 +5,7 @@ set(HEADERS
     src/dialogs.h
     src/GvfsService.h
     src/GvfsServiceException.h
+    src/GvfsServiceMonitor.h
     src/KeyBarTitlesHelper.h
     src/LngStringIDs.h
     src/MountPoint.h
@@ -19,6 +20,7 @@ set(SOURCES
     src/Configuration.cpp
     src/dialogs.cpp
     src/GvfsService.cpp
+    src/GvfsServiceMonitor.cpp
     src/KeyBarTitlesHelper.cpp
     src/MountPoint.cpp
     src/MountPointStorage.cpp
