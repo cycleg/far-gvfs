@@ -4,14 +4,12 @@
 #include "MountPoint.h"
 
 MountPoint::MountPoint():
-    m_bMounted(false),
     m_proto(EProtocol::Unknown),
     m_askPassword(false)
 {
 }
 
 MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, const std::wstring &password) :
-    m_bMounted(false),
     m_proto(EProtocol::Unknown),
     m_resPath(resPath),
     m_user(user),
@@ -22,7 +20,6 @@ MountPoint::MountPoint(const std::wstring &resPath, const std::wstring &user, co
 
 MountPoint::MountPoint(const MountPoint& other)
 {
-    m_bMounted = other.m_bMounted;
     m_proto = other.m_proto;
     m_resPath = other.m_resPath;
     m_user = other.m_user;
@@ -35,7 +32,6 @@ MountPoint::MountPoint(const MountPoint& other)
 
 MountPoint& MountPoint::operator=(const MountPoint& other)
 {
-    m_bMounted = other.m_bMounted;
     m_proto = other.m_proto;
     m_resPath = other.m_resPath;
     m_user = other.m_user;
@@ -55,13 +51,12 @@ bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
 
     // пароль спрашивают перед монтированием, зачищаем его
     if (m_askPassword) m_password.clear();
-    if (m_bMounted) return true;
+    if (isMounted()) return true;
     if (resPath.empty()) return false;
 
     bool success = service->mount(resPath, userName, password);
     if (success)
     {
-        m_bMounted = true;
         m_proto = MountPoint::SchemeToProto(service->getMountScheme());
         StrMB2Wide(service->getMountPath(), m_mountPointPath);
         StrMB2Wide(service->getMountName(), m_shareName);
@@ -71,7 +66,7 @@ bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
 
 bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
 {
-    if (!m_bMounted) return true;
+    if (!isMounted()) return true;
 
     std::string resPath(StrWide2MB(this->m_resPath));
     if (resPath.empty()) return false;
@@ -87,7 +82,6 @@ bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
         m_shareName.clear();
         m_mountPointPath.clear();
         m_proto = EProtocol::Unknown;
-        m_bMounted = false;
         throw; // escalate error
     }
     if (success)
@@ -95,7 +89,6 @@ bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
         m_shareName.clear();
         m_mountPointPath.clear();
         m_proto = EProtocol::Unknown;
-        m_bMounted = false;
     }
     return success;
 }
@@ -108,12 +101,10 @@ void MountPoint::mountCheck(GvfsService* service)
         m_mountPointPath.clear();
         m_shareName.clear();
         m_proto = EProtocol::Unknown;
-        m_bMounted = false;
         return;
     }
     if (service->mounted(resPath))
         {
-            m_bMounted = true;
             m_proto = MountPoint::SchemeToProto(service->getMountScheme());
             StrMB2Wide(service->getMountPath(), m_mountPointPath);
             StrMB2Wide(service->getMountName(), m_shareName);
@@ -123,7 +114,6 @@ void MountPoint::mountCheck(GvfsService* service)
             m_shareName.clear();
             m_mountPointPath.clear();
             m_proto = EProtocol::Unknown;
-            m_bMounted = false;
         }
 }
 

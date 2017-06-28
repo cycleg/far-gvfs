@@ -79,7 +79,9 @@ void Plugin::exitFar()
                 try
                 {
                     GvfsService service;
+                    m_processedPointId = mntPoint.second.getStorageId();
                     mntPoint.second.unmount(&service);
+                    m_processedPointId.clear();
                 }
                 catch (const GvfsServiceException& error)
                 {
@@ -241,6 +243,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
             }
             if (EditResourceDlg(m_pPsi, it->second))
             {
+                std::lock_guard<std::mutex> lck(m_pointsMutex);
                 MountPointStorage storage(m_registryRoot);
                 MountPoint changedMountPt = it->second;
                 m_mountPoints.erase(it);
@@ -260,6 +263,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         MountPoint point(MountPointStorage::PointFactory());
         if (EditResourceDlg(m_pPsi, point))
         {
+            std::lock_guard<std::mutex> lck(m_pointsMutex);
             MountPointStorage storage(m_registryRoot);
             m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
                 point.getResPath(), point
@@ -333,7 +337,9 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                                    ARRAYSIZE(msgItems), 0);
                     // для сообщения об ошибке
                     msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MMountError);
+                    m_processedPointId = it->second.getStorageId();
                     isMount = it->second.mount(&service);
+                    m_processedPointId.clear();
                 }
                 catch (const GvfsServiceException& error)
                 {
@@ -370,6 +376,7 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
         // user cancelled operation
         return -1;
     }
+    std::lock_guard<std::mutex> lck(m_pointsMutex);
     MountPointStorage storage(m_registryRoot);
     // TODO: save error
     storage.Save(point);
@@ -401,6 +408,7 @@ int Plugin::deleteFiles(HANDLE Plugin, PluginPanelItem* PanelItem, int itemsNumb
         auto it = m_mountPoints.find(name);
         if (it != m_mountPoints.end())
         {
+            std::lock_guard<std::mutex> lck(m_pointsMutex);
             MountPointStorage storage(m_registryRoot);
             if (it->second.isMounted())
             {
@@ -452,6 +460,35 @@ int Plugin::processEditorInput(const INPUT_RECORD* Rec)
     return 0;
 }
 
+void Plugin::onPointMounted()
+{
+    // проверяем в фоновом потоке, никаких уведомлений оператору
+    std::lock_guard<std::mutex> lck(m_pointsMutex);
+    for (auto& mountPoint : m_mountPoints)
+    {
+        if (!mountPoint.second.isMounted() &&
+            (mountPoint.second.getStorageId() != m_processedPointId))
+        {
+            GvfsService service;
+            mountPoint.second.mountCheck(&service);
+        }
+    }
+}
+
+void Plugin::onPointUnmounted()
+{
+    std::lock_guard<std::mutex> lck(m_pointsMutex);
+    for (auto& mountPoint : m_mountPoints)
+    {
+        if (mountPoint.second.isMounted() &&
+            (mountPoint.second.getStorageId() != m_processedPointId))
+        {
+            GvfsService service;
+            mountPoint.second.mountCheck(&service);
+        }
+    }
+}
+
 void Plugin::clearPanelItems()
 {
     for (PluginPanelItem& item : m_items)
@@ -469,6 +506,7 @@ void Plugin::clearPanelItems()
 void Plugin::updatePanelItems()
 {
     clearPanelItems();
+    std::lock_guard<std::mutex> lck(m_pointsMutex);
     for (const auto& mountPoint : m_mountPoints)
     {
         PluginPanelItem item;
@@ -492,7 +530,9 @@ void Plugin::unmountResource(MountPoint& point)
     try
     {
         GvfsService service;
+        m_processedPointId = point.getStorageId();
         point.unmount(&service);
+        m_processedPointId.clear();
     }
     catch (const GvfsServiceException& error)
     {
@@ -529,6 +569,7 @@ void Plugin::checkResourcesStatus()
     msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MPleaseWait);
     m_pPsi.Message(m_pPsi.ModuleNumber, 0, nullptr, msgItems,
                    ARRAYSIZE(msgItems), 0);
+    std::lock_guard<std::mutex> lck(m_pointsMutex);
     for (auto& mountPoint : m_mountPoints)
     {
         GvfsService service;

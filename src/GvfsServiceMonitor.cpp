@@ -1,6 +1,7 @@
 #include <functional>
 #include <iostream>
 #include <string>
+#include "Plugin.h"
 #include "GvfsServiceMonitor.h"
 
 namespace {
@@ -76,6 +77,7 @@ void GvfsServiceMonitor::onMountAdded(GVolumeMonitor* monitor, GMount* mount)
   std::cout << "GvfsServiceMonitor::onMountAdded() name: " << name << std::endl
             << "GvfsServiceMonitor::onMountAdded() path: " << path << std::endl
             << "GvfsServiceMonitor::onMountAdded() scheme: " << scheme << std::endl;
+  Plugin::getInstance().onPointMounted();
 }
 
 void GvfsServiceMonitor::onMountRemoved(GVolumeMonitor* monitor, GMount* mount)
@@ -102,6 +104,7 @@ void GvfsServiceMonitor::onMountRemoved(GVolumeMonitor* monitor, GMount* mount)
   std::cout << "GvfsServiceMonitor::onMountRemoved() name: " << name << std::endl
             << "GvfsServiceMonitor::onMountRemoved() path: " << path << std::endl
             << "GvfsServiceMonitor::onMountRemoved() scheme: " << scheme << std::endl;
+  Plugin::getInstance().onPointUnmounted();
 }
 
 void GvfsServiceMonitor::onMountChanged(GVolumeMonitor* monitor, GMount* mount)
