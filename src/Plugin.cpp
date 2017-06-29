@@ -481,16 +481,25 @@ void Plugin::onPointUnmounted(const std::string& name, const std::string& path,
     std::lock_guard<std::mutex> lck(m_pointsMutex);
     for (auto& mountPoint : m_mountPoints)
     {
+        std::wstring wname(StrMB2Wide(name)),
+                     wpath(StrMB2Wide(path));
         if (mountPoint.second.isMounted() &&
             (mountPoint.second.getStorageId() != m_processedPointId) &&
-            (mountPoint.second.getMountName() == name) &&
+            (mountPoint.second.getMountName() == wname) &&
             (mountPoint.second.getProto() == MountPoint::SchemeToProto(scheme)) &&
-            (mountPoint.second.getFsPath().find(path) == 0))
+            (mountPoint.second.getFsPath().find(wpath) == 0))
         {
             // фактически точка уже отмонтирована, поэтому "большой круг"
             // много времени не займет
             GvfsService service;
-            mountPoint.second.unmount(&service);
+            try
+            {
+                mountPoint.second.unmount(&service);
+            }
+            catch (const GvfsServiceException& error)
+            {
+                // ignore error here
+            }
         }
     }
 }
