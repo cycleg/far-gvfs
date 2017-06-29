@@ -100,7 +100,8 @@ public:
     /// исключением ресурса, операция над которым инициирована оператором
     /// (#m_processedPointId не пусто).
     ///
-    void onPointUnmounted();
+    void onPointUnmounted(const std::string& name, const std::string& path,
+                          const std::string& scheme);
 
 private:
     ///

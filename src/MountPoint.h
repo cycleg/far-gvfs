@@ -190,6 +190,17 @@ class MountPoint
     { m_askPassword = ask; return *this; }
 
     ///
+    /// Транслирует схему из URI ресурса в транспортный протокл.
+    ///
+    /// @param [in] scheme Схема в виде строки.
+    /// @return Транспортный протокол.
+    ///
+    /// Если схема не распознана, возвращает Unknown. В текущей реализации
+    /// распознаются протоколы из MountPoint::EProtocol.
+    ///
+    static EProtocol SchemeToProto(const std::string& scheme);
+
+    ///
     /// Подсоединить ресурс к локальной файловой системе.
     ///
     /// @param [in] service Указатель на экземпляр класса ввода/вывода.
@@ -249,17 +260,6 @@ class MountPoint
     void mountCheck(GvfsService* service);
 
   private:
-    ///
-    /// Транслирует схему из URI ресурса в транспортный протокл.
-    ///
-    /// @param [in] scheme Схема в виде строки.
-    /// @return Транспортный протокол.
-    ///
-    /// Если схема не распознана, возвращает Unknown. В текущей реализации
-    /// распознаются протоколы из MountPoint::EProtocol.
-    ///
-    static EProtocol SchemeToProto(const std::string& scheme);
-
     EProtocol m_proto; ///< Используемый транспортный протокол.
     std::wstring m_resPath; ///< URL ресурса.
     std::wstring m_user; ///< Имя пользователя для аутентификации на ресурсе.

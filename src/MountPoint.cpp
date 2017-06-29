@@ -43,6 +43,17 @@ MountPoint& MountPoint::operator=(const MountPoint& other)
     return *this;
 }
 
+MountPoint::EProtocol MountPoint::SchemeToProto(const std::string& scheme)
+{
+    MountPoint::EProtocol ret = EProtocol::Unknown;
+    if (scheme == "file") ret = EProtocol::File;
+    else if (scheme == "ftp") ret = EProtocol::Ftp;
+    else if (scheme == "http") ret = EProtocol::Http;
+    else if (scheme == "smb") ret = EProtocol::Samba;
+    else if (scheme == "sftp") ret = EProtocol::Sftp;
+    return ret;
+}
+
 bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
 {
     std::string resPath(StrWide2MB(m_resPath));
@@ -115,15 +126,4 @@ void MountPoint::mountCheck(GvfsService* service)
             m_mountPointPath.clear();
             m_proto = EProtocol::Unknown;
         }
-}
-
-MountPoint::EProtocol MountPoint::SchemeToProto(const std::string& scheme)
-{
-    MountPoint::EProtocol ret = EProtocol::Unknown;
-    if (scheme == "file") ret = EProtocol::File;
-    else if (scheme == "ftp") ret = EProtocol::Ftp;
-    else if (scheme == "http") ret = EProtocol::Http;
-    else if (scheme == "smb") ret = EProtocol::Samba;
-    else if (scheme == "sftp") ret = EProtocol::Sftp;
-    return ret;
 }
