@@ -245,7 +245,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
             {
                 std::lock_guard<std::mutex> lck(m_pointsMutex);
                 MountPointStorage storage(m_registryRoot);
-                MountPoint changedMountPt = it->second;
+                MountPoint changedMountPt(it->second);
                 m_mountPoints.erase(it);
                 m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
                     changedMountPt.getResPath(), changedMountPt
@@ -463,7 +463,11 @@ int Plugin::processEditorInput(const INPUT_RECORD* Rec)
 void Plugin::onPointMounted()
 {
     // проверяем в фоновом потоке, никаких уведомлений оператору
-    std::lock_guard<std::mutex> lck(m_pointsMutex);
+    bool changed = false;
+    std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
+    // запираем "вручную", чтобы освободить мутекс до завершения метода и
+    // избежать клинча в checkResourcesStatus()
+    lck.lock();
     for (auto& mountPoint : m_mountPoints)
     {
         if (!mountPoint.second.isMounted() &&
@@ -471,14 +475,25 @@ void Plugin::onPointMounted()
         {
             GvfsService service;
             mountPoint.second.mountCheck(&service);
+            if (mountPoint.second.isMounted()) changed = true;
         }
+    }
+    lck.unlock();
+    if (changed)
+    {
+        m_pPsi.Control(static_cast<HANDLE>(this), FCTL_UPDATEPANEL, 0, 0);
+        m_pPsi.Control(static_cast<HANDLE>(this), FCTL_REDRAWPANEL, 0, 0);
     }
 }
 
 void Plugin::onPointUnmounted(const std::string& name, const std::string& path,
                               const std::string& scheme)
 {
-    std::lock_guard<std::mutex> lck(m_pointsMutex);
+    bool changed = false;
+    std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
+    // запираем "вручную", чтобы освободить мутекс до завершения метода и
+    // избежать клинча в checkResourcesStatus()
+    lck.lock();
     for (auto& mountPoint : m_mountPoints)
     {
         std::wstring wname(StrMB2Wide(name)),
@@ -500,7 +515,14 @@ void Plugin::onPointUnmounted(const std::string& name, const std::string& path,
             {
                 // ignore error here
             }
+            changed = true;
         }
+    }
+    lck.unlock();
+    if (changed)
+    {
+        m_pPsi.Control(static_cast<HANDLE>(this), FCTL_UPDATEPANEL, 0, 0);
+        m_pPsi.Control(static_cast<HANDLE>(this), FCTL_REDRAWPANEL, 0, 0);
     }
 }
 

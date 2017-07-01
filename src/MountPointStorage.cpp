@@ -175,7 +175,7 @@ bool MountPointStorage::Save(const MountPoint& point)
     }
   // save always in current storage version
   ret = ret &&
-        SetValue(hKey, L"Path", point.m_resPath) &&
+        SetValue(hKey, L"Path", point.m_url) &&
         SetValue(hKey, L"User", point.m_user)  &&
         SetValue(hKey, L"Password", l_password) &&
         SetValue(hKey, L"AskPassword", l_askPassword);
@@ -315,10 +315,10 @@ bool MountPointStorage::Load(MountPoint& point) const
   key.append(point.m_storageId);
   res = WINPORT(RegOpenKeyEx)(HKEY_CURRENT_USER, key.c_str(), 0, KEY_READ, &hKey);
   if (res != ERROR_SUCCESS) return false;
-  std::wstring l_resPath, l_user;
+  std::wstring l_url, l_user;
   std::vector<BYTE> l_password;
   DWORD l_askPassword;
-  bool ret = GetValue(hKey, L"Path", l_resPath) &&
+  bool ret = GetValue(hKey, L"Path", l_url) &&
              GetValue(hKey, L"User", l_user)  &&
              GetValue(hKey, L"Password", l_password);
   switch (m_version)
@@ -327,7 +327,7 @@ bool MountPointStorage::Load(MountPoint& point) const
       if (ret)
       {
         // change record only on success
-        point.m_resPath = l_resPath;
+        point.m_url = l_url;
         point.m_user = l_user;
         Decrypt(l_password, point.m_password);
         point.m_askPassword = false; // для наглядности
@@ -338,7 +338,7 @@ bool MountPointStorage::Load(MountPoint& point) const
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
-        point.m_resPath = l_resPath;
+        point.m_url = l_url;
         point.m_user = l_user;
         Decrypt(l_password, point.m_password);
         point.m_askPassword = (l_askPassword == 1);
@@ -348,7 +348,7 @@ bool MountPointStorage::Load(MountPoint& point) const
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
-        point.m_resPath = l_resPath;
+        point.m_url = l_url;
         point.m_user = l_user;
 #ifdef USE_OPENSSL
         Decrypt(point.m_storageId, l_password, point.m_password);
@@ -363,7 +363,7 @@ bool MountPointStorage::Load(MountPoint& point) const
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
-        point.m_resPath = l_resPath;
+        point.m_url = l_url;
         point.m_user = l_user;
 #ifdef USE_SECRET_STORAGE
         if (Configuration::Instance()->useSecretStorage())

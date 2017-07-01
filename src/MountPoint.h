@@ -15,7 +15,7 @@ class MountPointStorage;
 
 /// Экземпляры класса сериализуются и десериализуются с помощью класса
 /// MountPointStorage. Храняться следующие свойства ресурса:
-/// * URL (свойство #m_resPath);
+/// * URL (свойство #m_url);
 /// * имя пользователя для аутентификации на ресурсе (#m_user);
 /// * пароль (#m_password);
 /// * флаг "спрашивать пароль перед монтированием" (#m_askPassword);
@@ -49,24 +49,6 @@ class MountPoint
         Unknown
     };
 
-    ///
-    /// Простой конструктор.
-    ///
-    /// URL, имя пользователя и пароль для аутентификации пустые, флаг
-    /// "спрашивать пароль перед монтированием" сброшен.
-    ///
-    MountPoint();
-    ///
-    /// Конструктор.
-    ///
-    /// @param [in] resPath URL ресурса.
-    /// @param [in] user Имя пользователя для аутентификации на ресурсе.
-    /// @param [in] password Пароль для аутентификации на ресурсе.
-    ///
-    /// Флаг "спрашивать пароль перед монтированием" сброшен.
-    ///
-    MountPoint(const std::wstring& resPath, const std::wstring& user,
-               const std::wstring& password);
     ///
     /// Копирующий конструктор.
     ///
@@ -128,7 +110,7 @@ class MountPoint
     ///
     /// @return URL.
     ///
-    inline const std::wstring& getResPath() const { return m_resPath; }
+    inline const std::wstring& getResPath() const { return m_url; }
     ///
     /// Имя пользователя для аутентификации на ресурсе.
     ///
@@ -163,7 +145,7 @@ class MountPoint
     /// @return Ссылка на данный экземпляр класса.
     ///
     inline MountPoint& setResPath(const std::wstring& s)
-    { m_resPath = s; return *this; }
+    { m_url = s; return *this; }
     ///
     /// Назначить ресурсу имя пользователя.
     ///
@@ -260,8 +242,17 @@ class MountPoint
     void mountCheck(GvfsService* service);
 
   private:
+    ///
+    /// Простой конструктор.
+    ///
+    /// URL, имя пользователя и пароль для аутентификации пустые, флаг
+    /// "спрашивать пароль перед монтированием" сброшен. Используется
+    /// только в MountPointStorage.
+    ///
+    MountPoint();
+
     EProtocol m_proto; ///< Используемый транспортный протокол.
-    std::wstring m_resPath; ///< URL ресурса.
+    std::wstring m_url; ///< URL ресурса.
     std::wstring m_user; ///< Имя пользователя для аутентификации на ресурсе.
     std::wstring m_password; ///< Пароль для аутентификации на ресурсе.
     std::wstring m_mountPointPath; ///< Абсолютный путь точки монтирования
