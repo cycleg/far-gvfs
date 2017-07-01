@@ -100,9 +100,9 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
           MResourceTitle, L"", 0 },
 
         { DI_TEXT, 4, 2, 0, 2, 0, 0, 0, 0,
-          MResourcePath, L"", 0 },
+          MResourceUrl, L"", 0 },
         { DI_EDIT, 4, 3, DIALOG_WIDTH - 5, 3, 1, 0, 0, 0,
-          -1, mountPoint.getResPath().c_str(), 0 },
+          -1, mountPoint.getUrl().c_str(), 0 },
 
         { DI_TEXT, 4, 4, 0, 4, 0, 0, 0, 0,
           MUser, L"", 0 },
@@ -133,7 +133,7 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
                                   dialogItems.size(), 0, 0, EditResourceDlgProc, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
-    std::wstring l_resPath = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::ResourcePathInput);
+    std::wstring l_url = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::ResourcePathInput);
     std::wstring l_user = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::UserInput);
     std::wstring l_password = DLG_GET_TEXTPTR(info, hDlg, EEditResourceDlg::PasswordInput);
     bool l_askPassword = DLG_GET_CHECKBOX(info, hDlg, EEditResourceDlg::AskPasswordInput);
@@ -144,11 +144,11 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
     {
         return false;
     }
-    if (l_resPath.empty())
+    if (l_url.empty())
     {
         const wchar_t* msgItems[2];
         msgItems[0] = info.GetMsg(info.ModuleNumber, MError);
-        msgItems[1] = info.GetMsg(info.ModuleNumber, MResourcePathEmptyError);
+        msgItems[1] = info.GetMsg(info.ModuleNumber, MResourceUrlEmptyError);
         info.Message(info.ModuleNumber, FMSG_WARNING | FMSG_MB_OK, nullptr,
                      msgItems, ARRAYSIZE(msgItems), 0);
         return false;
@@ -171,7 +171,7 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
                      msgItems, ARRAYSIZE(msgItems), 0);
         return false;
     }
-    mountPoint.setResPath(l_resPath);
+    mountPoint.setUrl(l_url);
     mountPoint.setUser(l_user);
     mountPoint.setAskPassword(l_askPassword);
     if (mountPoint.getAskPassword()) l_password.clear();

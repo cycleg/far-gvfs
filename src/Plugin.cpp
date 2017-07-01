@@ -248,7 +248,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
                 MountPoint changedMountPt(it->second);
                 m_mountPoints.erase(it);
                 m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
-                    changedMountPt.getResPath(), changedMountPt
+                    changedMountPt.getUrl(), changedMountPt
                 ));
                 // TODO: save error
                 storage.Save(changedMountPt);
@@ -266,7 +266,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
             std::lock_guard<std::mutex> lck(m_pointsMutex);
             MountPointStorage storage(m_registryRoot);
             m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
-                point.getResPath(), point
+                point.getUrl(), point
             ));
             // TODO: save error
             storage.Save(point);
@@ -352,7 +352,7 @@ int Plugin::setDirectory(HANDLE Plugin, const wchar_t* Dir, int OpMode)
                 if (!isMount) return 0;
             }
             // change directory to:
-            std::wstring dir = it->second.getFsPath();
+            std::wstring dir = it->second.getMountPath();
             if (!dir.empty())
             {
                 m_pPsi.Control(Plugin, FCTL_SETPANELDIR, 0, (LONG_PTR)(dir.c_str()));
@@ -380,7 +380,7 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
     MountPointStorage storage(m_registryRoot);
     // TODO: save error
     storage.Save(point);
-    m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getResPath(), point));
+    m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getUrl(), point));
     return 1;
 }
 
@@ -502,7 +502,7 @@ void Plugin::onPointUnmounted(const std::string& name, const std::string& path,
             (mountPoint.second.getStorageId() != m_processedPointId) &&
             (mountPoint.second.getMountName() == wname) &&
             (mountPoint.second.getProto() == MountPoint::SchemeToProto(scheme)) &&
-            (mountPoint.second.getFsPath().find(wpath) == 0))
+            (mountPoint.second.getMountPath().find(wpath) == 0))
         {
             // фактически точка уже отмонтирована, поэтому "большой круг"
             // много времени не займет
@@ -548,12 +548,12 @@ void Plugin::updatePanelItems()
     {
         PluginPanelItem item;
         memset(&item, 0, sizeof(item));
-        item.FindData.lpwszFileName = wcsdup(mountPoint.second.getResPath().c_str());
+        item.FindData.lpwszFileName = wcsdup(mountPoint.second.getUrl().c_str());
         item.FindData.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
         item.CustomColumnNumber = 3;
         wchar_t** data = new wchar_t*[3];
         data[0] = wcsdup(mountPoint.second.isMounted() ? TEXT("*") : TEXT(" ")); //C0
-        data[1] = wcsdup(mountPoint.second.getResPath().c_str()); //C1
+        data[1] = wcsdup(mountPoint.second.getUrl().c_str()); //C1
         data[2] = wcsdup(mountPoint.second.getUser().c_str()); //C2
         item.CustomColumnData = data;
         m_items.push_back(item);

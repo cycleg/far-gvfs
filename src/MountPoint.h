@@ -96,7 +96,7 @@ class MountPoint
     ///
     /// Возвращает пустую строку, если ресурс не смонтирован.
     ///
-    inline const std::wstring& getFsPath() const { return m_mountPointPath; }
+    inline const std::wstring& getMountPath() const { return m_mountPointPath; }
     ///
     /// Имя смонтированного ресурса.
     ///
@@ -110,7 +110,7 @@ class MountPoint
     ///
     /// @return URL.
     ///
-    inline const std::wstring& getResPath() const { return m_url; }
+    inline const std::wstring& getUrl() const { return m_url; }
     ///
     /// Имя пользователя для аутентификации на ресурсе.
     ///
@@ -144,7 +144,7 @@ class MountPoint
     /// @param [in] s Новый URL.
     /// @return Ссылка на данный экземпляр класса.
     ///
-    inline MountPoint& setResPath(const std::wstring& s)
+    inline MountPoint& setUrl(const std::wstring& s)
     { m_url = s; return *this; }
     ///
     /// Назначить ресурсу имя пользователя.

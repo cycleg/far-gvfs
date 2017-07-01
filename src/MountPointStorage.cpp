@@ -95,7 +95,7 @@ void MountPointStorage::LoadAll(std::map<std::wstring, MountPoint>& storage)
       // load always converse record to current storage version
       // TODO: load error
       if (Load(point))
-          storage.insert(std::pair<std::wstring, MountPoint>(point.getResPath(),
+          storage.insert(std::pair<std::wstring, MountPoint>(point.getUrl(),
                          point));
     }
     index++;
