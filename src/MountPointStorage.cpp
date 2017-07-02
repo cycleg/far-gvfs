@@ -18,7 +18,7 @@
 
 const wchar_t* MountPointStorage::StoragePath = L"Resources";
 const wchar_t* MountPointStorage::StorageVersionKey = L"Version";
-const DWORD MountPointStorage::StorageVersion = 4;
+const DWORD MountPointStorage::StorageVersion = 5;
 
 MountPointStorage::MountPointStorage(const std::wstring& registryFolder):
   RegistryStorage(registryFolder),
@@ -175,8 +175,8 @@ bool MountPointStorage::Save(const MountPoint& point)
     }
   // save always in current storage version
   ret = ret &&
-        SetValue(hKey, L"Path", point.m_url) &&
-        SetValue(hKey, L"User", point.m_user)  &&
+        SetValue(hKey, L"URL", point.m_url) &&
+        SetValue(hKey, L"User", point.m_user) &&
         SetValue(hKey, L"Password", l_password) &&
         SetValue(hKey, L"AskPassword", l_askPassword);
   WINPORT(RegCloseKey)(hKey);
@@ -256,6 +256,7 @@ void MountPointStorage::Decrypt(const std::vector<BYTE>& in, std::wstring& out) 
     case 2:
     case 3:
     case 4:
+    case 5:
       {
         unsigned int i = 0;
         wchar_t symbol = 0;
@@ -294,6 +295,7 @@ void MountPointStorage::Decrypt(const std::wstring& keydata,
   {
     case 3:
     case 4:
+    case 5:
       crypto.decrypt(in, plain);
       for (const BYTE ch : plain) buf.push_back(ch);
       StrMB2Wide(buf, out);
@@ -318,12 +320,13 @@ bool MountPointStorage::Load(MountPoint& point) const
   std::wstring l_url, l_user;
   std::vector<BYTE> l_password;
   DWORD l_askPassword;
-  bool ret = GetValue(hKey, L"Path", l_url) &&
-             GetValue(hKey, L"User", l_user)  &&
+  bool ret = GetValue(hKey, L"User", l_user)  &&
              GetValue(hKey, L"Password", l_password);
   switch (m_version)
   {
     case 1:
+      ret = ret &&
+            GetValue(hKey, L"Path", l_url);
       if (ret)
       {
         // change record only on success
@@ -335,6 +338,7 @@ bool MountPointStorage::Load(MountPoint& point) const
       break;
     case 2:
       ret = ret &&
+            GetValue(hKey, L"Path", l_url) &&
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
@@ -345,6 +349,7 @@ bool MountPointStorage::Load(MountPoint& point) const
       }
     case 3:
       ret = ret &&
+            GetValue(hKey, L"Path", l_url) &&
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
@@ -360,6 +365,7 @@ bool MountPointStorage::Load(MountPoint& point) const
       break;
     case 4:
       ret = ret &&
+            GetValue(hKey, L"Path", l_url) &&
             GetValue(hKey, L"AskPassword", l_askPassword);
       if (ret)
       {
@@ -372,6 +378,32 @@ bool MountPointStorage::Load(MountPoint& point) const
             // Здесь делаем ссылочную целостность слабой: если пароль не
             // удалось извлечь из стороннего хранилища, это не означает
             // порчу всей записи. Пусть пользователь введет пароль заново.
+            storage.LoadPassword(point.m_storageId, point.m_password);
+          }
+          else
+#endif
+          {
+#ifdef USE_OPENSSL
+            Decrypt(point.m_storageId, l_password, point.m_password);
+#else
+            Decrypt(l_password, point.m_password);
+#endif
+          }
+        point.m_askPassword = (l_askPassword == 1);
+      }
+      break;
+    case 5:
+      ret = ret &&
+            GetValue(hKey, L"URL", l_url) &&
+            GetValue(hKey, L"AskPassword", l_askPassword);
+      if (ret)
+      {
+        point.m_url = l_url;
+        point.m_user = l_user;
+#ifdef USE_SECRET_STORAGE
+        if (Configuration::Instance()->useSecretStorage())
+          {
+            SecretServiceStorage storage;
             storage.LoadPassword(point.m_storageId, point.m_password);
           }
           else
