@@ -243,7 +243,10 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
             }
             if (EditResourceDlg(m_pPsi, it->second))
             {
-                std::lock_guard<std::mutex> lck(m_pointsMutex);
+                std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
+                // запираем "вручную", чтобы освободить мутекс до завершения
+                // метода и избежать клинча в checkResourcesStatus()
+                lck.lock();
                 MountPointStorage storage(m_registryRoot);
                 MountPoint changedMountPt(it->second);
                 m_mountPoints.erase(it);
@@ -252,6 +255,7 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
                 ));
                 // TODO: save error
                 storage.Save(changedMountPt);
+                lck.unlock();
                 m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
             }
         }
@@ -263,13 +267,15 @@ std::cerr << "Plugin::processKey() key = " << key << std::endl;
         MountPoint point(MountPointStorage::PointFactory());
         if (EditResourceDlg(m_pPsi, point))
         {
-            std::lock_guard<std::mutex> lck(m_pointsMutex);
+            std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
+            lck.lock();
             MountPointStorage storage(m_registryRoot);
             m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
                 point.getUrl(), point
             ));
             // TODO: save error
             storage.Save(point);
+            lck.unlock();
             m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
         }
         return 1;
