@@ -37,19 +37,11 @@ GvfsServiceMonitor GvfsServiceMonitor::m_instance;
 GvfsServiceMonitor::GvfsServiceMonitor():
   m_monitor(g_volume_monitor_get())
 {
-  // подключаем к сигналам наши слоты через обертки в виде C-функций
-  g_signal_connect(m_monitor, "mount-added",
-                   G_CALLBACK(monitor_mount_added_wrapper), nullptr);
-  g_signal_connect(m_monitor, "mount-removed",
-                   G_CALLBACK(monitor_mount_removed_wrapper), nullptr);
-  g_signal_connect(m_monitor, "mount-changed",
-                   G_CALLBACK(monitor_mount_changed_wrapper), nullptr);
-  g_signal_connect(m_monitor, "mount-pre-unmount",
-                   G_CALLBACK(monitor_mount_pre_unmount_wrapper), nullptr);
 }
 
 GvfsServiceMonitor::~GvfsServiceMonitor()
 {
+  if ((m_mainLoop.operator->() != nullptr) && m_mainLoop->is_running()) quit();
   g_object_unref(m_monitor);
 }
 
@@ -164,6 +156,20 @@ void GvfsServiceMonitor::run()
 {
   if ((m_mainLoop.operator->() != nullptr) && m_mainLoop->is_running())
     return;
+  // подключаем к сигналам наши слоты через обертки в виде C-функций
+  gulong handler = 0;
+  handler = g_signal_connect(m_monitor, "mount-added",
+                             G_CALLBACK(monitor_mount_added_wrapper), nullptr);
+  m_handlers.push_back(handler);
+  handler = g_signal_connect(m_monitor, "mount-removed",
+                             G_CALLBACK(monitor_mount_removed_wrapper), nullptr);
+  m_handlers.push_back(handler);
+  handler = g_signal_connect(m_monitor, "mount-changed",
+                             G_CALLBACK(monitor_mount_changed_wrapper), nullptr);
+  m_handlers.push_back(handler);
+  handler = g_signal_connect(m_monitor, "mount-pre-unmount",
+                             G_CALLBACK(monitor_mount_pre_unmount_wrapper), nullptr);
+  m_handlers.push_back(handler);
   // запускаем главный цикл монитора в отдельном потоке
   m_thread = std::make_shared<std::thread>(std::bind(&GvfsServiceMonitor::loop,
                                                      this));
@@ -176,6 +182,9 @@ void GvfsServiceMonitor::quit()
     return;
   m_mainLoop->quit();
   m_thread->join();
+  for (auto handler: m_handlers)
+    g_signal_handler_disconnect(m_monitor, handler);
+  m_handlers.clear();
 }
 
 void GvfsServiceMonitor::loop()

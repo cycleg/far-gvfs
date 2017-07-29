@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <thread>
+#include <vector>
 #include <gtkmm.h>
 
 /// 
@@ -73,10 +74,14 @@ class GvfsServiceMonitor
     ///
     /// Запуск главного цикла монитора, работает в отдельном потоке.
     ///
+    /// Перед запуском цикла подключаются обработчики сигналов.
+    ///
     void run();
 
     ///
     /// Остановка главного цикла монитора.
+    ///
+    /// После остановки цикла отключаются обработчики сигналов.
     ///
     void quit();
 
@@ -97,4 +102,6 @@ class GvfsServiceMonitor
     Glib::RefPtr<Glib::MainLoop> m_mainLoop; ///< Главный цикл glib.
     std::shared_ptr<std::thread> m_thread; ///< Поток, в котором работает
                                            ///< главный цикл.
+    std::vector<gulong> m_handlers; ///< Идентификаторы установленных
+                                    ///< обработчиков сигналов.
 };
