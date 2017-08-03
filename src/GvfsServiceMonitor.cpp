@@ -66,9 +66,12 @@ void GvfsServiceMonitor::onMountAdded(GVolumeMonitor* monitor, GMount* mount)
     }
     g_object_unref(file);
   }
-  std::cout << "GvfsServiceMonitor::onMountAdded() name: " << name << std::endl
-            << "GvfsServiceMonitor::onMountAdded() path: " << path << std::endl
-            << "GvfsServiceMonitor::onMountAdded() scheme: " << scheme << std::endl;
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountAdded() name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountAdded() path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountAdded() scheme: " << scheme << std::endl;
   Plugin::getInstance().onPointMounted();
 }
 
@@ -93,8 +96,11 @@ void GvfsServiceMonitor::onMountRemoved(GVolumeMonitor* monitor, GMount* mount)
     }
     g_object_unref(file);
   }
-  std::cout << "GvfsServiceMonitor::onMountRemoved() name: " << name << std::endl
-            << "GvfsServiceMonitor::onMountRemoved() path: " << path << std::endl
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountRemoved() name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountRemoved() path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
             << "GvfsServiceMonitor::onMountRemoved() scheme: " << scheme << std::endl;
   Plugin::getInstance().onPointUnmounted(name, path, scheme);
 }
@@ -120,9 +126,12 @@ void GvfsServiceMonitor::onMountChanged(GVolumeMonitor* monitor, GMount* mount)
     }
     g_object_unref(file);
   }
-  std::cout << "GvfsServiceMonitor::onMountChanged() name: " << name << std::endl
-            << "GvfsServiceMonitor::onMountChanged() path: " << path << std::endl
-            << "GvfsServiceMonitor::onMountChanged() scheme: " << scheme << std::endl;
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountChanged() name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountChanged() path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountChanged() scheme: " << scheme << std::endl;
 }
 
 void GvfsServiceMonitor::onMountPreunmount(GVolumeMonitor* monitor,
@@ -147,9 +156,12 @@ void GvfsServiceMonitor::onMountPreunmount(GVolumeMonitor* monitor,
     }
     g_object_unref(file);
   }
-  std::cout << "GvfsServiceMonitor::onMountPreunmount name: " << name << std::endl
-            << "GvfsServiceMonitor::onMountPreunmount path: " << path << std::endl
-            << "GvfsServiceMonitor::onMountPreunmount scheme: " << scheme << std::endl;
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountPreunmount name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountPreunmount path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountPreunmount scheme: " << scheme << std::endl;
 }
 
 void GvfsServiceMonitor::run()
