@@ -157,7 +157,7 @@ bool GvfsService::mount(const std::string &resPath, const std::string &userName,
 
     // какая-то операция в данном экземпляре уже запущена
     if (m_mainLoop && m_mainLoop->is_running()) return false;
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " GvfsService::mount() " << resPath << std::endl;
     m_exception.reset();
     m_mountScheme.clear();
@@ -264,7 +264,7 @@ bool GvfsService::umount(const std::string &resPath)
 {
     // какая-то операция в данном экземпляре уже запущена
     if (m_mainLoop && m_mainLoop->is_running()) return false;
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " GvfsService::umount() " << resPath << std::endl;
     m_exception.reset();
 
@@ -324,7 +324,7 @@ bool GvfsService::mounted(const std::string& resPath)
 {
     // какая-то операция в данном экземпляре уже запущена
     if (m_mainLoop && m_mainLoop->is_running()) return false;
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " GvfsService::mounted() " << resPath << std::endl;
     m_exception.reset();
     m_mountScheme.clear();
@@ -374,12 +374,12 @@ void GvfsService::on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_opera
                                   const Glib::ustring& msg,
                                   const Glib::StringArrayHandle& choices)
 {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " on signal_ask_question: " << msg.raw() << std::endl
           << std::hex << std::this_thread::get_id() << std::dec
           << " choices:" << std::endl;
 int i = 0;
-for (const auto& choice : choices) std::cerr << i++ << " " << choice.raw() << std::endl;
+for (const auto& choice : choices) std::cout << i++ << " " << choice.raw() << std::endl;
     if (m_uiCallbacks)
         {
             int answer = mount_operation->get_choice();
@@ -400,7 +400,7 @@ void GvfsService::on_ask_password(Glib::RefPtr<Gio::MountOperation>& mount_opera
                                   const Glib::ustring& defaultdomain,
                                   Gio::AskPasswordFlags flags)
 {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " Gvfs on signal_ask_password ask password: " << msg.raw() << std::endl
           << std::hex << std::this_thread::get_id() << std::dec
           << " Gvfs on signal_ask_password default user: " << defaultUser.raw() << std::endl
@@ -411,7 +411,7 @@ std::cerr << std::hex << std::this_thread::get_id() << std::dec
         mount_operation->get_username().empty() &&
         mount_operation->get_password().empty())
     {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " Gvfs on signal_ask_password set anonymous" << std::endl;
         mount_operation->set_anonymous(true);
     }
@@ -420,19 +420,19 @@ std::cerr << std::hex << std::this_thread::get_id() << std::dec
         // trigger functor for entering user credentials
         if (flags & G_ASK_PASSWORD_NEED_USERNAME)
         {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " Gvfs on signal_ask_password NEED USERNAME" << std::endl;
             // trigger user name enter callback, call passwd functor
         }
         if (flags & G_ASK_PASSWORD_NEED_DOMAIN)
         {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " Gvfs on signal_ask_password NEED DOMAIN" << std::endl;
             // trigger domain name enter callback, call passwd functor
         }
         if (flags & G_ASK_PASSWORD_NEED_PASSWORD)
         {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " Gvfs on signal_ask_password NEED PASSWORD" << std::endl;
             // trigger password name enter callback, call passwd functor
         }
@@ -445,7 +445,7 @@ void GvfsService::on_ask_question(GMountOperation* op, char* message,
                                   char** choices, gpointer user_data)
 {
     (void)user_data;
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " on signal_ask_question: " << message << std::endl
           << std::hex << std::this_thread::get_id() << std::dec
           << " choices:" << std::endl;
@@ -453,7 +453,7 @@ int i = 0;
 char** choice = choices;
 while (*choice)
 {
-std::cerr << i << " " << *choice << std::endl;
+std::cout << i << " " << *choice << std::endl;
 i++;
 choice++;
 }
@@ -476,7 +476,7 @@ void GvfsService::on_ask_password(GMountOperation* op, const char* message,
                                   const char* default_domain,
                                   GAskPasswordFlags flags)
 {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " Gvfs on signal_ask_password ask password: " << message << std::endl
           << std::hex << std::this_thread::get_id() << std::dec
           << " Gvfs on signal_ask_password default user: " << default_user << std::endl
@@ -486,7 +486,7 @@ std::cerr << std::hex << std::this_thread::get_id() << std::dec
         (g_mount_operation_get_username(op) == nullptr) &&
         (g_mount_operation_get_password(op) == nullptr))
     {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " Gvfs on signal_ask_password set anonymous" << std::endl;
         g_mount_operation_set_anonymous(op, true);
     }
@@ -495,13 +495,13 @@ std::cerr << std::hex << std::this_thread::get_id() << std::dec
 
 void GvfsService::on_aborted(Glib::RefPtr<Gio::MountOperation>& mount_operation)
 {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " on signal_aborted" << std::endl;
 }
 
 void GvfsService::mount_cb(Glib::RefPtr<Gio::AsyncResult>& result)
 {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " GvfsService::mount_cb()" << std::endl;
     try
     {
@@ -540,7 +540,7 @@ bool GvfsService::unmount_cb(Glib::RefPtr<Gio::AsyncResult> &result)
 
 Glib::RefPtr<Gio::Mount> GvfsService::find_mount_cb(Glib::RefPtr<Gio::AsyncResult>& result)
 {
-std::cerr << std::hex << std::this_thread::get_id() << std::dec
+std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " GvfsService::find_mount_cb()" << std::endl;
     Glib::RefPtr<Gio::Mount> l_mount;
     try

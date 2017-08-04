@@ -101,7 +101,7 @@ void GvfsServiceMonitor::onMountRemoved(GVolumeMonitor* monitor, GMount* mount)
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
-            << "GvfsServiceMonitor::onMountRemoved() scheme: " << scheme << std::endl;
+            << " GvfsServiceMonitor::onMountRemoved() scheme: " << scheme << std::endl;
   Plugin::getInstance().onPointUnmounted(name, path, scheme);
 }
 
