@@ -151,7 +151,6 @@ GvfsService::GvfsService(UiCallbacks* uic) :
 
 bool GvfsService::mount(const std::string &resPath, const std::string &userName,
                         const std::string &password)
-    throw(GvfsServiceException)
 {
     using namespace std::placeholders;
 
@@ -260,7 +259,6 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
 }
 
 bool GvfsService::umount(const std::string &resPath)
-    throw(GvfsServiceException)
 {
     // какая-то операция в данном экземпляре уже запущена
     if (m_mainLoop && m_mainLoop->is_running()) return false;

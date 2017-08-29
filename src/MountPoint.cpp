@@ -45,7 +45,7 @@ MountPoint::EProtocol MountPoint::SchemeToProto(const std::string& scheme)
     return ret;
 }
 
-bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
+bool MountPoint::mount(GvfsService* service)
 {
     std::string url(StrWide2MB(m_url));
     std::string userName(StrWide2MB(m_user));
@@ -66,7 +66,7 @@ bool MountPoint::mount(GvfsService* service) throw(GvfsServiceException)
     return success;
 }
 
-bool MountPoint::unmount(GvfsService* service) throw(GvfsServiceException)
+bool MountPoint::unmount(GvfsService* service)
 {
     if (!isMounted()) return true;
 
