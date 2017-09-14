@@ -495,6 +495,8 @@ void Plugin::onPointMounted()
 void Plugin::onPointUnmounted(const std::string& name, const std::string& path,
                               const std::string& scheme)
 {
+    std::wstring wname(StrMB2Wide(name)),
+                 wpath(StrMB2Wide(path));
     bool changed = false;
     std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
     // запираем "вручную", чтобы освободить мутекс до завершения метода и
@@ -502,8 +504,6 @@ void Plugin::onPointUnmounted(const std::string& name, const std::string& path,
     lck.lock();
     for (auto& mountPoint : m_mountPoints)
     {
-        std::wstring wname(StrMB2Wide(name)),
-                     wpath(StrMB2Wide(path));
         if (mountPoint.second.isMounted() &&
             (mountPoint.second.getStorageId() != m_processedPointId) &&
             (mountPoint.second.getMountName() == wname) &&

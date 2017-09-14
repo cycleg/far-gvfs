@@ -2,8 +2,8 @@
 
 #include <memory>
 #include <thread>
-#include <vector>
 #include <gtkmm.h>
+#include "JobUnitQueue.h"
 
 /// 
 /// @brief Обертка вокруг GVolumeMonitor, монитор точек монтирования GVFS
@@ -86,6 +86,16 @@ class GvfsServiceMonitor
     void quit();
 
   private:
+    struct Job
+    {
+      bool mount;
+      std::string name, path, scheme;
+      Job(): mount(false) {}
+    };
+    typedef std::shared_ptr<Job> JobPtr; ///< "Умный указатель" на Job.
+    typedef JobUnitQueue< JobPtr > JobQueue; ///< Специализация шаблона для
+    ///< очереди из "умных указателей" на Job.
+
     static GvfsServiceMonitor m_instance; ///< Экземпляр-синглет класса.
 
     ///
@@ -98,10 +108,19 @@ class GvfsServiceMonitor
     /// 
     void loop();
 
+    ///
+    /// Поток обработки сигналов.
+    ///
+    void worker();
+
     GVolumeMonitor* m_monitor; ///< Монитор точек монтирования GVFS.
     Glib::RefPtr<Glib::MainLoop> m_mainLoop; ///< Главный цикл glib.
     std::shared_ptr<std::thread> m_thread; ///< Поток, в котором работает
-                                           ///< главный цикл.
-    std::vector<gulong> m_handlers; ///< Идентификаторы установленных
-                                    ///< обработчиков сигналов.
+                                           ///< главный цикл, принимающий
+                                           ///< сигналы.
+    std::shared_ptr<std::thread> m_worker; ///< Поток, в котором обрабатывают
+                                           ///< принятые в главном цикле
+                                           ///< сигналы.
+    bool m_quit; ///< Флаг остановки для потока-обработчика сигналов.
+    JobQueue m_jobs; ///< Очередь заданий для обработчика сигналов.
 };

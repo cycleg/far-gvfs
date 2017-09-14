@@ -6,6 +6,7 @@ set(HEADERS
     src/GvfsService.h
     src/GvfsServiceException.h
     src/GvfsServiceMonitor.h
+    src/JobUnitQueue.h
     src/KeyBarTitlesHelper.h
     src/LngStringIDs.h
     src/MountPoint.h
