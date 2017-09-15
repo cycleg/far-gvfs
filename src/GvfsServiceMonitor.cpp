@@ -36,7 +36,7 @@ extern "C" void monitor_mount_pre_unmount_wrapper(GVolumeMonitor* volume_monitor
 GvfsServiceMonitor GvfsServiceMonitor::m_instance;
 
 GvfsServiceMonitor::GvfsServiceMonitor():
-  m_monitor(g_volume_monitor_get()),
+  m_monitor(nullptr),
   m_quit(false)
 {
 }
@@ -44,7 +44,11 @@ GvfsServiceMonitor::GvfsServiceMonitor():
 GvfsServiceMonitor::~GvfsServiceMonitor()
 {
   if ((m_mainLoop.operator->() != nullptr) && m_mainLoop->is_running()) quit();
-  g_object_unref(m_monitor);
+  if (m_monitor)
+  {
+    g_object_unref(m_monitor);
+    m_monitor = nullptr;
+  }
 }
 
 void GvfsServiceMonitor::onMountAdded(GVolumeMonitor* monitor, GMount* mount)
@@ -200,7 +204,10 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " GvfsServiceMonitor::loop() run" << std::endl;
   std::vector<gulong> handlers;
   Gio::init();
+  // создаем volume monitor в контексте потока
+  m_monitor = g_volume_monitor_get();
   Glib::RefPtr<Glib::MainContext> main_context = Glib::MainContext::create();
+  main_context->acquire();
   // Чтобы контекст главного цикла Glib::MainLoop не отслеживал ничего,
   // кроме операций с ресурсами! Иначе блокируется пользовательский ввод Far.
   // Из руководства:
@@ -223,7 +230,7 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
                                       G_CALLBACK(monitor_mount_pre_unmount_wrapper),
                                       nullptr));
   // на будущее запускаем главный цикл glib отдельным оператором
-  m_mainLoop = Glib::MainLoop::create(false);
+  m_mainLoop = Glib::MainLoop::create(main_context, false);
   m_mainLoop->run();
   // отключаем наши слоты от сигналов
   for (auto handler: handlers)
@@ -239,6 +246,10 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
   // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает
   // assert.
   g_main_context_pop_thread_default(main_context->gobj());
+  main_context->release();
+  // больше volume monitor не нужен
+  g_object_unref(m_monitor);
+  m_monitor = nullptr;
 std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " GvfsServiceMonitor::loop() end" << std::endl;
 }
