@@ -203,7 +203,6 @@ void GvfsServiceMonitor::loop()
 std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " GvfsServiceMonitor::loop() run" << std::endl;
   std::vector<gulong> handlers;
-  Gio::init();
   // создаем volume monitor в контексте потока
   m_monitor = g_volume_monitor_get();
   Glib::RefPtr<Glib::MainContext> main_context = Glib::MainContext::create();

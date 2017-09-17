@@ -12,10 +12,6 @@
 // и глобальную переменную ask_question_callback. См. GvfsService::mount() и
 // слот GvfsService::on_ask_question().
 //
-// Объезд с ask_password пришлось сделать после введения
-// g_main_context_push_thread_default(). Без него приложение аварийно
-// завершалось.
-//
 // TODO
 // В старших версиях glibmm тип Glib::StringArrayHandle полностью заменен на
 // std::vector<Glib::ustring>. После обновления версии в Debian можно будет
@@ -163,18 +159,7 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     m_mountPath.clear();
     m_mountName.clear();
 
-    Gio::init();
-
-    Glib::RefPtr< Glib::MainContext > main_context = Glib::MainContext::create();
-    // Чтобы контекст главного цикла Glib::MainLoop не отслеживал ничего,
-    // кроме операций с ресурсом! Иначе блокируется пользовательский ввод Far.
-    // Из руководства:
-    // This will cause certain asynchronous operations (such as most GIO-based
-    // I/O) which are started in this thread to run under context and deliver
-    // their results to its main loop, rather than running under the global
-    // default context in the main thread.
-    g_main_context_push_thread_default(main_context->gobj());
-    m_mainLoop = Glib::MainLoop::create(main_context, false);
+    m_mainLoop = Glib::MainLoop::create(false);
 
     m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
@@ -183,15 +168,6 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     if (!password.empty()) mount_operation->set_password(password);
 
     // connect mount_operation slots
-#if 0
-    mount_operation->signal_ask_question().connect(
-        std::bind(&GvfsService::on_ask_question, this, mount_operation, _1, _2)
-    );
-    mount_operation->signal_ask_password().connect(
-        std::bind(&GvfsService::on_ask_password, this, mount_operation, _1, _2,
-                  _3, _4)
-    );
-#endif
     MountCallbacks::slots sl;
     sl.onAskQuestion = std::bind(&GvfsService::on_ask_question, this, _1, _2,
                                  _3, _4);
@@ -213,16 +189,6 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
                                        });
         m_mainLoop->run();
         mountCallbacksRegistry.disconnect(mount_operation->gobj());
-        // Из руководства:
-        // In some cases however, you may want to schedule a single operation
-        // in a non-default context, or temporarily use a non-default context
-        // in the main thread. In that case, you can wrap the call to the
-        // asynchronous operation inside a
-        // g_main_context_push_thread_default() / g_main_context_pop_thread_default()
-        // pair...
-        // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает
-        // assert.
-        g_main_context_pop_thread_default(main_context->gobj());
         // Если адрес уже подключен (пользователь завел два ресурса про один
         // и тот же сервер), то m_file->find_enclosing_mount() завершится без
         // исключения, и ошибка "already mount" будет проигнорирована, что
@@ -241,9 +207,6 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     }
     catch (const Glib::Error& ex)
     {
-        // А здесь контекст потока восстанавливать не получается, и снова
-        // из-за assert в Glib. Вероятно, это связано с "разматыванием" стека.
-        // Сплошные загадки...
         std::cerr << std::hex << std::this_thread::get_id() << std::dec
                   << " GvfsService::mount() Glib::Error: " << ex.what().raw()
                   << std::endl;
@@ -265,8 +228,6 @@ bool GvfsService::umount(const std::string &resPath)
 std::cout << std::hex << std::this_thread::get_id() << std::dec
 << " GvfsService::umount() " << resPath << std::endl;
     m_exception.reset();
-
-    Gio::init();
 
     m_mainLoop = Glib::MainLoop::create(false);
 
@@ -328,8 +289,6 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     m_mountScheme.clear();
     m_mountPath.clear();
     m_mountName.clear();
-
-    Gio::init();
 
     m_mainLoop = Glib::MainLoop::create(false);
 

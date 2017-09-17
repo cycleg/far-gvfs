@@ -64,6 +64,9 @@ void Plugin::setStartupInfo(const PluginStartupInfo* psi)
     // load mount points from registry
     MountPointStorage storage(m_registryRoot);
     storage.LoadAll(m_mountPoints);
+    // gtkmm initialization
+    Gio::init();
+    // Запускается главный цикл обработки сигналов от gtkmm (glib).
     GvfsServiceMonitor::instance().run();
 }
 
