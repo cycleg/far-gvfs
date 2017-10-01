@@ -9,7 +9,7 @@
 // "Объезд" ошибки в glibmm v2.50.0: проблемы с управлением памятью из-за
 // использования Glib::StringArrayHandle в сигнале/слоте ask_question класса
 // Gio::MountOperation. Приходится использовать оригинальный C-интерфейс GIO
-// и глобальную переменную ask_question_callback. См. GvfsService::mount() и
+// и глобальную переменную mountCallbacksRegistry. См. GvfsService::mount() и
 // слот GvfsService::on_ask_question().
 //
 // TODO
@@ -17,6 +17,8 @@
 // std::vector<Glib::ustring>. После обновления версии в Debian можно будет
 // проверить работоспособность Gio::MountOperation, а затем перейти к условной
 // компиляции GvfsService в зависимости от версии glibmm.
+
+#ifndef USE_GIO_MOUNTOPERATION_ONLY
 
 extern "C" void ask_question_wrapper(GMountOperation* op, char* message,
                                      char** choices, gpointer user_data);
@@ -140,6 +142,8 @@ extern "C" void ask_password_wrapper(GMountOperation* op,
 
 } // anonymous namespace
 
+#endif // USE_GIO_MOUNTOPERATION_ONLY
+
 GvfsService::GvfsService(UiCallbacks* uic) :
     m_uiCallbacks(uic)
 {
@@ -159,7 +163,16 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     m_mountPath.clear();
     m_mountName.clear();
 
-    m_mainLoop = Glib::MainLoop::create(false);
+    Glib::RefPtr<Glib::MainContext> main_context = Glib::MainContext::create();
+    // Чтобы контекст главного цикла Glib::MainLoop не отслеживал ничего,
+    // кроме операций с ресурсами! Иначе блокируется пользовательский ввод Far.
+    // Из руководства:
+    // This will cause certain asynchronous operations (such as most GIO-based
+    // I/O) which are started in this thread to run under context and deliver
+    // their results to its main loop, rather than running under the global
+    // default context in the main thread.
+    g_main_context_push_thread_default(main_context->gobj());
+    m_mainLoop = Glib::MainLoop::create(main_context, false);
 
     m_file = Gio::File::create_for_parse_name(resPath);
     Glib::RefPtr<Gio::MountOperation> mount_operation = Gio::MountOperation::create();
@@ -168,12 +181,22 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     if (!password.empty()) mount_operation->set_password(password);
 
     // connect mount_operation slots
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
+    mount_operation->signal_ask_question().connect(
+        std::bind(&GvfsService::on_ask_question, this, mount_operation, _1, _2)
+    );
+    mount_operation->signal_ask_password().connect(
+        std::bind(&GvfsService::on_ask_password, this, mount_operation, _1, _2,
+                  _3, _4)
+    );
+#else // USE_GIO_MOUNTOPERATION_ONLY
     MountCallbacks::slots sl;
     sl.onAskQuestion = std::bind(&GvfsService::on_ask_question, this, _1, _2,
                                  _3, _4);
     sl.onAskPassword = std::bind(&GvfsService::on_ask_password, this, _1, _2,
                                  _3, _4, _5);
     mountCallbacksRegistry.connect(mount_operation->gobj(), sl);
+#endif // USE_GIO_MOUNTOPERATION_ONLY
     mount_operation->signal_aborted().connect(
         std::bind(&GvfsService::on_aborted, this, mount_operation)
     );
@@ -188,7 +211,9 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
                                           this->mount_cb(result);
                                        });
         m_mainLoop->run();
+#ifndef USE_GIO_MOUNTOPERATION_ONLY
         mountCallbacksRegistry.disconnect(mount_operation->gobj());
+#endif // USE_GIO_MOUNTOPERATION_ONLY
         // Если адрес уже подключен (пользователь завел два ресурса про один
         // и тот же сервер), то m_file->find_enclosing_mount() завершится без
         // исключения, и ошибка "already mount" будет проигнорирована, что
@@ -204,13 +229,25 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
                   << std::hex << std::this_thread::get_id() << std::dec
                   << " GvfsService::mount() scheme: " << m_mountScheme << std::endl;
         l_mounted = true;
+        // Из руководства:
+        // In some cases however, you may want to schedule a single operation
+        // in a non-default context, or temporarily use a non-default context
+        // in the main thread. In that case, you can wrap the call to the
+        // asynchronous operation inside a
+        // g_main_context_push_thread_default() / g_main_context_pop_thread_default()
+        // pair...
+        // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает
+        // assert.
+        g_main_context_pop_thread_default(main_context->gobj());
     }
     catch (const Glib::Error& ex)
     {
         std::cerr << std::hex << std::this_thread::get_id() << std::dec
                   << " GvfsService::mount() Glib::Error: " << ex.what().raw()
                   << std::endl;
+#ifndef USE_GIO_MOUNTOPERATION_ONLY
         mountCallbacksRegistry.disconnect(mount_operation->gobj());
+#endif // USE_GIO_MOUNTOPERATION_ONLY
         if (m_exception.get() == nullptr)
         {
           m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
@@ -326,10 +363,11 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     return (l_mount.operator->() != nullptr);
 }
 
-#if 0
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
+
 void GvfsService::on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                                   const Glib::ustring& msg,
-                                  const Glib::StringArrayHandle& choices)
+                                  const std::vector<Glib::ustring>& choices)
 {
 std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " on signal_ask_question: " << msg.raw() << std::endl
@@ -340,7 +378,7 @@ for (const auto& choice : choices) std::cout << i++ << " " << choice.raw() << st
     if (m_uiCallbacks)
         {
             int answer = mount_operation->get_choice();
-            m_uiCallbacks->onAskQuestion(message, choices, answer);
+            m_uiCallbacks->onAskQuestion(msg, choices, answer);
             if (answer != -1)
                 {
                     mount_operation->set_choice(answer);
@@ -396,7 +434,8 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     }
     mount_operation->reply(Gio::MOUNT_OPERATION_HANDLED);
 }
-#endif
+
+#else // USE_GIO_MOUNTOPERATION_ONLY
 
 void GvfsService::on_ask_question(GMountOperation* op, char* message,
                                   char** choices, gpointer user_data)
@@ -449,6 +488,8 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
     }
     g_mount_operation_reply(op, G_MOUNT_OPERATION_HANDLED);
 }
+
+#endif // USE_GIO_MOUNTOPERATION_ONLY
 
 void GvfsService::on_aborted(Glib::RefPtr<Gio::MountOperation>& mount_operation)
 {

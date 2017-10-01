@@ -3,6 +3,7 @@
 #include <memory>
 #include <thread>
 #include <gtkmm.h>
+#include "glibmmconf.h"
 #include "JobUnitQueue.h"
 
 /// 
@@ -28,6 +29,46 @@ class GvfsServiceMonitor
     ///
     ~GvfsServiceMonitor();
 
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
+    ///
+    /// Слот обработки сигнала "mount added" в процедуре монтирования.
+    ///
+    /// @param [in] mount Обрабатываемая точка монтирования.
+    ///
+    /// Сигнал подается по завершению операции монтирования.
+    ///
+    void onMountAdded(const Glib::RefPtr<Gio::Mount>& mount);
+
+    ///
+    /// Слот обработки сигнала "mount removed" в процедуре отмонтирования.
+    ///
+    /// @param [in] mount Обрабатываемая точка монтирования.
+    ///
+    /// Сигнал подается по завершению операции отмонтирования. Если приемник
+    /// владеет объектом mount, то он должен освободить его.
+    ///
+    void onMountRemoved(const Glib::RefPtr<Gio::Mount>& mount);
+
+    ///
+    /// Слот обработки сигнала "mount changed".
+    ///
+    /// @param [in] mount Обрабатываемая точка монтирования.
+    ///
+    /// Сигнал подается, когда состояние mount меняется.
+    ///
+    void onMountChanged(const Glib::RefPtr<Gio::Mount>& mount);
+
+    ///
+    /// Слот обработки сигнала "mount pre-unmount" в процедуре отмонтирования.
+    ///
+    /// @param [in] mount Обрабатываемая точка монтирования.
+    ///
+    /// Сигнал извещает о скором начале операции отмонтирования. Если приемник
+    /// сигнала может удерживать точку монтирования открытым файлом, он должен
+    /// закрыть его.
+    ///
+    void onMountPreunmount(const Glib::RefPtr<Gio::Mount>& mount);
+#else // USE_GIO_MOUNTOPERATION_ONLY
     ///
     /// Слот обработки сигнала "mount added" в процедуре монтирования.
     ///
@@ -70,6 +111,7 @@ class GvfsServiceMonitor
     /// закрыть его.
     ///
     void onMountPreunmount(GVolumeMonitor* monitor, GMount* mount);
+#endif // USE_GIO_MOUNTOPERATION_ONLY
 
     ///
     /// Запуск главного цикла монитора, работает в отдельном потоке.
@@ -131,7 +173,6 @@ class GvfsServiceMonitor
     ///
     void worker();
 
-    GVolumeMonitor* m_monitor; ///< Монитор точек монтирования GVFS.
     Glib::RefPtr<Glib::MainLoop> m_mainLoop; ///< Главный цикл glib.
     std::shared_ptr<std::thread> m_thread; ///< Поток, в котором работает
                                            ///< главный цикл, принимающий

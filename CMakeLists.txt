@@ -3,6 +3,7 @@ project(gvfspanel)
 set(HEADERS
     src/Configuration.h
     src/dialogs.h
+    src/glibmmconf.h
     src/GvfsService.h
     src/GvfsServiceException.h
     src/GvfsServiceMonitor.h

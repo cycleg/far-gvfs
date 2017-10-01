@@ -3,7 +3,9 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <vector>
 #include <gtkmm.h>
+#include "glibmmconf.h"
 #include "GvfsServiceException.h"
 
 class UiCallbacks;
@@ -121,10 +123,10 @@ public:
 
 private:
 
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
 // "Чистые" C++-слоты отложены до лучших времен. Подробнее см. в
 // GvfsService.cpp.
 
-#if 0
     ///
     /// Слот обработки сигнала "ask question" в процедуре монтирования.
     ///
@@ -143,7 +145,7 @@ private:
     ///
     void on_ask_question(Glib::RefPtr<Gio::MountOperation>& mount_operation,
                          const Glib::ustring& msg,
-                         const Glib::StringArrayHandle& choices);
+                         const std::vector<Glib::ustring>& choices);
     ///
     /// Слот обработки сигнала "ask password" в процедуре монтирования.
     ///
@@ -164,8 +166,7 @@ private:
                          const Glib::ustring& defaultUser,
                          const Glib::ustring& defaultdomain,
                          Gio::AskPasswordFlags flags);
-#endif
-
+#else
 // "Смешанные" слоты обработки сигналов. Слоты регистрируются через
 // C-интерфейс glib, подробнее см. в GvfsService.cpp.
 
@@ -206,6 +207,7 @@ private:
     void on_ask_password(GMountOperation* op, const char* message,
                          const char* default_user, const char* default_domain,
                          GAskPasswordFlags flags);
+#endif // USE_GIO_MOUNTOPERATION_ONLY
 
 // "Чистый" C++-слот.
 

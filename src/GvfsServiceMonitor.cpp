@@ -5,6 +5,7 @@
 #include "Plugin.h"
 #include "GvfsServiceMonitor.h"
 
+#ifndef USE_GIO_MOUNTOPERATION_ONLY
 namespace {
 
 extern "C" void monitor_mount_added_wrapper(GVolumeMonitor* volume_monitor,
@@ -32,25 +33,92 @@ extern "C" void monitor_mount_pre_unmount_wrapper(GVolumeMonitor* volume_monitor
 }
 
 } // anonymous namespace
+#endif // USE_GIO_MOUNTOPERATION_ONLY
 
 GvfsServiceMonitor GvfsServiceMonitor::m_instance;
 
 GvfsServiceMonitor::GvfsServiceMonitor():
-  m_monitor(nullptr),
   m_quit(false)
 {
 }
 
 GvfsServiceMonitor::~GvfsServiceMonitor()
 {
-  if ((m_mainLoop.operator->() != nullptr) && m_mainLoop->is_running()) quit();
-  if (m_monitor)
-  {
-    g_object_unref(m_monitor);
-    m_monitor = nullptr;
-  }
+  if ((m_mainLoop.operator->() != nullptr) && m_mainLoop->is_running())
+    quit();
 }
 
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
+void GvfsServiceMonitor::onMountAdded(const Glib::RefPtr<Gio::Mount>& mount)
+{
+  std::string name, path, scheme;
+  name = mount->get_name();
+  Glib::RefPtr< const Gio::File > file = mount->get_root();
+  path = file->get_path();
+  scheme = file->get_uri_scheme();
+//  Glib::object_unref(file);
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountAdded() name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountAdded() path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountAdded() scheme: " << scheme << std::endl;
+  JobPtr job(new Job());
+  job->mount = true;
+  m_jobs.put(job);
+  m_jobs.notify_one();
+}
+
+void GvfsServiceMonitor::onMountRemoved(const Glib::RefPtr<Gio::Mount>& mount)
+{
+  JobPtr job(new Job());
+  job->name = mount->get_name();
+  Glib::RefPtr< const Gio::File > file = mount->get_root();
+  job->path = file->get_path();
+  job->scheme = file->get_uri_scheme();
+//  Gio::File::object_unref(file);
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountRemoved() name: " << job->name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountRemoved() path: " << job->path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountRemoved() scheme: " << job->scheme << std::endl;
+  m_jobs.put(job);
+  m_jobs.notify_one();
+}
+
+void GvfsServiceMonitor::onMountChanged(const Glib::RefPtr<Gio::Mount>& mount)
+{
+  std::string name, path, scheme;
+  name = mount->get_name();
+  Glib::RefPtr< const Gio::File > file = mount->get_root();
+  path = file->get_path();
+  scheme = file->get_uri_scheme();
+//  Gio::File::object_unref(file);
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountChanged() name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountChanged() path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountChanged() scheme: " << scheme << std::endl;
+}
+
+void GvfsServiceMonitor::onMountPreunmount(const Glib::RefPtr<Gio::Mount>& mount)
+{
+  std::string name, path, scheme;
+  name = mount->get_name();
+  Glib::RefPtr< const Gio::File > file = mount->get_root();
+  path = file->get_path();
+  scheme = file->get_uri_scheme();
+//  Gio::File::object_unref(file);
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountPreunmount name: " << name << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountPreunmount path: " << path << std::endl
+            << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::onMountPreunmount scheme: " << scheme << std::endl;
+}
+#else // USE_GIO_MOUNTOPERATION_ONLY
 void GvfsServiceMonitor::onMountAdded(GVolumeMonitor* monitor, GMount* mount)
 {
   std::string name, path, scheme;
@@ -173,6 +241,7 @@ void GvfsServiceMonitor::onMountPreunmount(GVolumeMonitor* monitor,
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount scheme: " << scheme << std::endl;
 }
+#endif // USE_GIO_MOUNTOPERATION_ONLY
 
 void GvfsServiceMonitor::run()
 {
@@ -202,53 +271,59 @@ void GvfsServiceMonitor::loop()
 {
 std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " GvfsServiceMonitor::loop() run" << std::endl;
-  std::vector<gulong> handlers;
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
+  using namespace std::placeholders;
+  // извлекаем указатель на Volume Monitor
+  Glib::RefPtr<Gio::VolumeMonitor> monitor = Gio::VolumeMonitor::get();
+  std::vector<sigc::connection> handlers;
+  // подключаем к сигналам наши слоты
+  handlers.push_back(monitor->signal_mount_added().connect(
+    std::bind(&GvfsServiceMonitor::onMountAdded, this, _1)
+  ));
+  handlers.push_back(monitor->signal_mount_removed().connect(
+    std::bind(&GvfsServiceMonitor::onMountRemoved, this, _1)
+  ));
+  handlers.push_back(monitor->signal_mount_changed().connect(
+    std::bind(&GvfsServiceMonitor::onMountChanged, this, _1)
+  ));
+  handlers.push_back(monitor->signal_mount_pre_unmount().connect(
+    std::bind(&GvfsServiceMonitor::onMountPreunmount, this, _1)
+  ));
+#else // USE_GIO_MOUNTOPERATION_ONLY
   // создаем volume monitor в контексте потока
-  m_monitor = g_volume_monitor_get();
-  Glib::RefPtr<Glib::MainContext> main_context = Glib::MainContext::create();
-  main_context->acquire();
-  // Чтобы контекст главного цикла Glib::MainLoop не отслеживал ничего,
-  // кроме операций с ресурсами! Иначе блокируется пользовательский ввод Far.
-  // Из руководства:
-  // This will cause certain asynchronous operations (such as most GIO-based
-  // I/O) which are started in this thread to run under context and deliver
-  // their results to its main loop, rather than running under the global
-  // default context in the main thread.
-  g_main_context_push_thread_default(main_context->gobj());
+  GVolumeMonitor* monitor = g_volume_monitor_get();
+  std::vector<gulong> handlers;
   // подключаем к сигналам наши слоты через обертки в виде C-функций
-  handlers.push_back(g_signal_connect(m_monitor, "mount-added",
+  handlers.push_back(g_signal_connect(monitor, "mount-added",
                                       G_CALLBACK(monitor_mount_added_wrapper),
                                       nullptr));
-  handlers.push_back(g_signal_connect(m_monitor, "mount-removed",
+  handlers.push_back(g_signal_connect(monitor, "mount-removed",
                                       G_CALLBACK(monitor_mount_removed_wrapper),
                                       nullptr));
-  handlers.push_back(g_signal_connect(m_monitor, "mount-changed",
+  handlers.push_back(g_signal_connect(monitor, "mount-changed",
                                       G_CALLBACK(monitor_mount_changed_wrapper),
                                       nullptr));
-  handlers.push_back(g_signal_connect(m_monitor, "mount-pre-unmount",
+  handlers.push_back(g_signal_connect(monitor, "mount-pre-unmount",
                                       G_CALLBACK(monitor_mount_pre_unmount_wrapper),
                                       nullptr));
-  // на будущее запускаем главный цикл glib отдельным оператором
-  m_mainLoop = Glib::MainLoop::create(main_context, false);
+#endif // USE_GIO_MOUNTOPERATION_ONLY
+  m_mainLoop = Glib::MainLoop::create(false);
   m_mainLoop->run();
   // отключаем наши слоты от сигналов
   for (auto handler: handlers)
-    g_signal_handler_disconnect(m_monitor, handler);
+#ifdef USE_GIO_MOUNTOPERATION_ONLY
+    handler.disconnect();
+#else
+    g_signal_handler_disconnect(monitor, handler);
+#endif // USE_GIO_MOUNTOPERATION_ONLY
   handlers.clear();
-  // Из руководства:
-  // In some cases however, you may want to schedule a single operation
-  // in a non-default context, or temporarily use a non-default context
-  // in the main thread. In that case, you can wrap the call to the
-  // asynchronous operation inside a
-  // g_main_context_push_thread_default() / g_main_context_pop_thread_default()
-  // pair...
-  // Второй вариант, видимо, наш случай. Без этого вызова Glib выдает
-  // assert.
-  g_main_context_pop_thread_default(main_context->gobj());
-  main_context->release();
   // больше volume monitor не нужен
-  g_object_unref(m_monitor);
-  m_monitor = nullptr;
+#ifndef USE_GIO_MOUNTOPERATION_ONLY
+//  Gio::VolumeMonitor::object_unref(monitor);
+// #else
+  g_object_unref(monitor);
+  monitor = nullptr;
+#endif // USE_GIO_MOUNTOPERATION_ONLY
 std::cout << std::hex << std::this_thread::get_id() << std::dec
           << " GvfsServiceMonitor::loop() end" << std::endl;
 }
