@@ -248,6 +248,7 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
 #ifndef USE_GIO_MOUNTOPERATION_ONLY
         mountCallbacksRegistry.disconnect(mount_operation->gobj());
 #endif // USE_GIO_MOUNTOPERATION_ONLY
+        g_main_context_pop_thread_default(main_context->gobj());
         if (m_exception.get() == nullptr)
         {
           m_exception = std::make_shared<GvfsServiceException>(ex.domain(),
