@@ -84,12 +84,8 @@ endif(OPENSSL_FOUND)
 
 if(SECRET_FOUND)
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_SECRET_STORAGE)
-    target_include_directories(${PROJECT_NAME} PRIVATE
-        ${SECRET_INCLUDE_DIRS}
-    )
-    target_link_libraries(${PROJECT_NAME}
-        ${SECRET_LIBRARIES}
-    )
+    target_include_directories(${PROJECT_NAME} PRIVATE ${SECRET_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} ${SECRET_LIBRARIES})
 endif(SECRET_FOUND)
 
 set_target_properties(${PROJECT_NAME}
