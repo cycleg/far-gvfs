@@ -46,8 +46,8 @@ different password storages. If libsecret is available, the passwords
 can be stored in the system's secure storage: Gnome Keyring or KDE Wallet.
 OpenSSL is used to encrypt stored passwords if a secure repository is not
 involved or the plugin build without its support. Finally, if the plugin
-build without OpenSSL and support for a secure repository (or it is not
-used), then _the passwords are stored almost unencrypted_!
+build without OpenSSL and support for a secure storage (or it is not used),
+then _the passwords are stored almost unencrypted_!
 
 Для сборки дополнение помещается в дерево исходного кода far2l в виде
 поддиректории. Hапример, если код far2l развернут в директорию "far2l",
@@ -97,7 +97,7 @@ _не указаны_. Вместо хранения пароля можно з�
 завершения операции панель GVFS переключается на вновь подсоединенный ресурс.
 Ресурсы в статусе подсоединенных в списке помечаются знаком "*". Отсоединить
 ресурс можно, нажав Shift-F8. Статусы ресурсов на панели обновляются
-автоматически, либо bручную их можно обновить, нажав Ctrl-R.
+автоматически, либо их можно обновить вручную, нажав Ctrl-R.
 
 To mount network resources, you must specify the resource URL, account, and
 password needed for authentication. Anonymous mounting is possible: anonymous
