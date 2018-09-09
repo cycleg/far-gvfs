@@ -11,7 +11,7 @@ _Only for those who are particularly interested._
 файловыми системами. Поддерживаются те протоколы, которые поддерживает GVFS
 (SFTP, WebDAV, SAMBA и др.).
 
-Very simple addition to far2l. Wrap around GVFS: allows you to work with
+Very simple plugin for far2l. Wrap around GVFS: allows you to work with
 network resources as virtual file systems. Supported are those protocols
 that support GVFS (SFTP, WebDAV, SAMBA, etc.).
 
@@ -41,13 +41,13 @@ apt-get install libgtkmm-3.0-dev uuid-dev libssl-dev libsecret-1-dev
 без OpenSSL и поддержки безопасного хранилища (или оно не используется), то
 _пароли хранятся практически незашифрованными_!
 
-Depending on the availability of libsecret and OpenSSL, the addition of
-different passwords is supported. If libsecret is available, the passwords
+Depending on the availability of libsecret and OpenSSL, the plugin support
+different password storages. If libsecret is available, the passwords
 can be stored in the system's secure storage: Gnome Keyring or KDE Wallet.
 OpenSSL is used to encrypt stored passwords if a secure repository is not
-involved or the add-on is collected without its support. Finally, if the
-add-on is collected without OpenSSL and support for a secure repository (or it
-is not used), then _the passwords are stored almost unencrypted_!
+involved or the plugin build without its support. Finally, if the plugin
+build without OpenSSL and support for a secure repository (or it is not
+used), then _the passwords are stored almost unencrypted_!
 
 Для сборки дополнение помещается в дерево исходного кода far2l в виде
 поддиректории. Hапример, если код far2l развернут в директорию "far2l",
@@ -71,11 +71,11 @@ add_subdirectory (far-gvfs)
 Дополнение будет собрано и подготовлено к установке вместе с прочими
 дополнениями far2l, входящими в его состав.
 
-The add-on will be collected and prepared for installation along with
-other add-ons far2l included in its composition.
+The plugin will be build and prepared for installation along with
+other plugins far2l included in its composition.
 
 Для работы дополнения в целевой ОС должны быть установлены:
-To work the add-on in the target OS should be installed:
+To work the plugin in the target OS should be installed:
 
 * gtkmm;
 * поддержка GVFS;
@@ -105,7 +105,7 @@ connections are attempted if neither the account or the password are
 specified. Instead of storing the password, you can request it each time prior
 to mounting the resource. During the connection, the user can make a request
 with a choice of options for further action. The wording of the request and
-options depends on the protocol used. The add-on presents them in the form
+options depends on the protocol used. The plugin presents them in the form
 they receive from GVFS. Similarly, if any errors occur, a message is sent to
 the GVFS. If the mount operation completes successfully, the GVFS panel will
 then switch to the newly-connected resource. Connected resources are marked
@@ -119,7 +119,7 @@ automatically, or you can update them manually by pressing Ctrl-R.
 смонтированных ресурсов. Таким образом, разрешение всех возможных конфликтов в
 работе с ресурсами оставлено средствам самой GVFS.
 
-Depending on the add-on's settings, the known mounted resources can be
+Depending on the plugin's settings, the known mounted resources can be
 disconnected automatically when you exit far2l. If more than one instance of
 far2l is started, then they share a common (system) pool of mounted resources.
 Thus, the resolution of all possible conflicts in working with resources is
@@ -136,7 +136,7 @@ left to GVFS.
 ресурсе не отбрасывается. Пользователь сможет ввести пароль заново.
 
 Data about network resources is stored in the far2l registry under the
-"Software / Far2 / gvfspanel / Resources" branch. Depending on the add-on's
+"Software / Far2 / gvfspanel / Resources" branch. Depending on the plugin's
 settings, passwords can be stored separately in the system's secure storage. If
 the previously saved data is no longer displayed in the panel or is loaded
 incorrectly, simply delete the entire branch and re-create the resources.
@@ -148,8 +148,8 @@ discarded. The user can enter the password again.
 
 Дополнение добавляется в меню выбора устройств far2l под именем "GVFS," а
 также в меню конфигурации и команд дополнений. Параметры конфигурации far-gvfs /
-Addition is added to the far2l device selection menu under the name "GVFS," as
-well as in the configuration menu and add-on commands. Far-gvfs configuration
+Plugin is added to the far2l device selection menu under the name "GVFS," as
+well as in the configuration menu and plugin commands. Far-gvfs configuration
 parameters:
 
 * отсоединять или нет известные смонтированные ресурсы при выходе из far2l. По
@@ -159,12 +159,12 @@ parameters:
   умолчанию не используются. Параметр может отсутствовать, если дополнение
   собрано без поддержки безопасных хранилищ. / use or not to store passwords for
   system-safe storage. By default not used. The parameter can be absent if the
-  addition is collected without the support of secure stores.
+  plugin build without the support of secure storages.
 
 Команды/Commands:
 
 * переключение текущей панели на панель самого дополнения. / Switch the current
-  panel to the panel of the add-on itself.
+  panel to the panel of the plugin itself.
 
 ## Известные проблемы / Known issues
 
@@ -186,7 +186,7 @@ Error 2 for various file operations using FTP as the transport.|Errors in the im
 
 Исходный код дополнения документирован с помощью doxygen. Для построения
 документации достаточно отдать в корне дерева кода команду / The source
-code for the add-on is documented using doxygen. For building documentation
+code for the plugin is documented using doxygen. For building documentation
 it is enough to give the following command at the root of the code tree:
 
 ```
