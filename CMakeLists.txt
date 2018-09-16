@@ -88,13 +88,12 @@ if(SECRET_FOUND)
     target_link_libraries(${PROJECT_NAME} ${SECRET_LIBRARIES})
 endif(SECRET_FOUND)
 
-set_target_properties(${PROJECT_NAME}
-  PROPERTIES
+set_target_properties(${PROJECT_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${INSTALL_DIR}/Plugins/${PROJECT_NAME}/plug"
     PREFIX ""
     SUFFIX ".far-plug-wide")
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/configs
-   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/configs "${INSTALL_DIR}/Plugins/${PROJECT_NAME}"
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/configs
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/configs "${INSTALL_DIR}/Plugins/${PROJECT_NAME}"
 )

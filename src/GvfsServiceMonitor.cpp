@@ -57,12 +57,14 @@ void GvfsServiceMonitor::onMountAdded(const Glib::RefPtr<Gio::Mount>& mount)
   path = file->get_path();
   scheme = file->get_uri_scheme();
 //  Glib::object_unref(file);
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountAdded() name: " << name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountAdded() path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountAdded() scheme: " << scheme << std::endl;
+#endif // NDEBUG
   JobPtr job(new Job());
   job->mount = true;
   m_jobs.put(job);
@@ -77,12 +79,14 @@ void GvfsServiceMonitor::onMountRemoved(const Glib::RefPtr<Gio::Mount>& mount)
   job->path = file->get_path();
   job->scheme = file->get_uri_scheme();
 //  Gio::File::object_unref(file);
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() name: " << job->name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() path: " << job->path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() scheme: " << job->scheme << std::endl;
+#endif // NDEBUG
   m_jobs.put(job);
   m_jobs.notify_one();
 }
@@ -95,12 +99,14 @@ void GvfsServiceMonitor::onMountChanged(const Glib::RefPtr<Gio::Mount>& mount)
   path = file->get_path();
   scheme = file->get_uri_scheme();
 //  Gio::File::object_unref(file);
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountChanged() name: " << name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountChanged() path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountChanged() scheme: " << scheme << std::endl;
+#endif // NDEBUG
 }
 
 void GvfsServiceMonitor::onMountPreunmount(const Glib::RefPtr<Gio::Mount>& mount)
@@ -111,12 +117,14 @@ void GvfsServiceMonitor::onMountPreunmount(const Glib::RefPtr<Gio::Mount>& mount
   path = file->get_path();
   scheme = file->get_uri_scheme();
 //  Gio::File::object_unref(file);
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount name: " << name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount scheme: " << scheme << std::endl;
+#endif // NDEBUG
 }
 #else // USE_GIO_MOUNTOPERATION_ONLY
 void GvfsServiceMonitor::onMountAdded(GVolumeMonitor* monitor, GMount* mount)
@@ -140,12 +148,14 @@ void GvfsServiceMonitor::onMountAdded(GVolumeMonitor* monitor, GMount* mount)
     }
     g_object_unref(file);
   }
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountAdded() name: " << name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountAdded() path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountAdded() scheme: " << scheme << std::endl;
+#endif // NDEBUG
   JobPtr job(new Job());
   job->mount = true;
   m_jobs.put(job);
@@ -173,12 +183,14 @@ void GvfsServiceMonitor::onMountRemoved(GVolumeMonitor* monitor, GMount* mount)
     }
     g_object_unref(file);
   }
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() name: " << job->name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() path: " << job->path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountRemoved() scheme: " << job->scheme << std::endl;
+#endif // NDEBUG
   m_jobs.put(job);
   m_jobs.notify_one();
 }
@@ -204,12 +216,14 @@ void GvfsServiceMonitor::onMountChanged(GVolumeMonitor* monitor, GMount* mount)
     }
     g_object_unref(file);
   }
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountChanged() name: " << name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountChanged() path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountChanged() scheme: " << scheme << std::endl;
+#endif // NDEBUG
 }
 
 void GvfsServiceMonitor::onMountPreunmount(GVolumeMonitor* monitor,
@@ -234,12 +248,14 @@ void GvfsServiceMonitor::onMountPreunmount(GVolumeMonitor* monitor,
     }
     g_object_unref(file);
   }
+#ifndef NDEBUG
   std::cout << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount name: " << name << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount path: " << path << std::endl
             << std::hex << std::this_thread::get_id() << std::dec
             << " GvfsServiceMonitor::onMountPreunmount scheme: " << scheme << std::endl;
+#endif // NDEBUG
 }
 #endif // USE_GIO_MOUNTOPERATION_ONLY
 
@@ -269,8 +285,10 @@ void GvfsServiceMonitor::quit()
 
 void GvfsServiceMonitor::loop()
 {
-std::cout << std::hex << std::this_thread::get_id() << std::dec
-          << " GvfsServiceMonitor::loop() run" << std::endl;
+#ifndef NDEBUG
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::loop() run" << std::endl;
+#endif // NDEBUG
 #ifdef USE_GIO_MOUNTOPERATION_ONLY
   using namespace std::placeholders;
   // извлекаем указатель на Volume Monitor
@@ -324,14 +342,18 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
   g_object_unref(monitor);
   monitor = nullptr;
 #endif // USE_GIO_MOUNTOPERATION_ONLY
-std::cout << std::hex << std::this_thread::get_id() << std::dec
-          << " GvfsServiceMonitor::loop() end" << std::endl;
+#ifndef NDEBUG
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::loop() end" << std::endl;
+#endif //
 }
 
 void GvfsServiceMonitor::worker()
 {
-std::cout << std::hex << std::this_thread::get_id() << std::dec
-          << " GvfsServiceMonitor::worker() run" << std::endl;
+#ifndef NDEBUG
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::worker() run" << std::endl;
+#endif // NDEBUG
   while (!m_quit)
   {
     if (!m_jobs.wait_for(std::chrono::milliseconds(500)))
@@ -344,6 +366,8 @@ std::cout << std::hex << std::this_thread::get_id() << std::dec
                                                     job->scheme);
     }
   }
-std::cout << std::hex << std::this_thread::get_id() << std::dec
-          << " GvfsServiceMonitor::worker() end" << std::endl;
+#ifndef NDEBUG
+  std::cout << std::hex << std::this_thread::get_id() << std::dec
+            << " GvfsServiceMonitor::worker() end" << std::endl;
+#endif // NDEBUG
 }

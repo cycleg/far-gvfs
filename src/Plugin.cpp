@@ -216,7 +216,9 @@ int Plugin::processHostFile(HANDLE Plugin, PluginPanelItem* PanelItem, int items
 
 int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
 {
-std::cerr << "Plugin::processKey() key = " << key << std::endl;
+#ifndef NDEBUG
+    std::cerr << "Plugin::processKey() key = " << key << std::endl;
+#endif // NDEBUG
     if (((controlState == 0) && ((key == VK_F3) || (key == VK_F5) || (key == VK_F6))) ||
         ((controlState == PKF_SHIFT) && 
          (((key >= VK_F1) && (key <= VK_F3)) || (key == VK_F5) || (key == VK_F6))) ||
