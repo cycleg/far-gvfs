@@ -49,6 +49,13 @@ involved or the plugin build without its support. Finally, if the plugin
 build without OpenSSL and support for a secure storage (or it is not used),
 then _the passwords are stored almost unencrypted_!
 
+Шифрование хранимых паролей и использование системного безопасного хранилища
+может быть отключено перед сборкой явно. Для этого в cmake-проекте
+"CMakeLists.txt" дополнения имются соответствующие опции:
+"STORE_ENCRYPTED_PASSWORDS" и "USE_SECRET_STORAGE". Если опция отключена, то
+дополнение соберется без отключенной возможности, даже если нужные зависимости
+установлены.
+
 Для сборки дополнение помещается в дерево исходного кода far2l в виде
 поддиректории. Hапример, если код far2l развернут в директорию "far2l",
 то код far-gvfs помещается в "far2l/far-gvfs". Затем директорию добавляют

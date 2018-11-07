@@ -1,5 +1,8 @@
 project(gvfspanel)
 
+OPTION(STORE_ENCRYPTED_PASSWORDS "Encrypt stored passwords." ON)
+OPTION(USE_SECRET_STORAGE "Store passwords in system secret storage." ON)
+
 set(HEADERS
     src/Configuration.h
     src/dialogs.h
@@ -41,15 +44,23 @@ pkg_check_modules(SECRET libsecret-1)
 
 find_package(OpenSSL MODULE)
 
-if(OPENSSL_FOUND)
+if(OPENSSL_FOUND AND STORE_ENCRYPTED_PASSWORDS)
     list(APPEND HEADERS src/Crypto.h)
     list(APPEND SOURCES src/Crypto.cpp)
-endif(OPENSSL_FOUND)
+else(OPENSSL_FOUND AND STORE_ENCRYPTED_PASSWORDS)
+    if(STORE_ENCRYPTED_PASSWORDS)
+        message(FATAL_ERROR "OpenSSL not found, password encryption not possible.")
+    endif(STORE_ENCRYPTED_PASSWORDS)
+endif(OPENSSL_FOUND AND STORE_ENCRYPTED_PASSWORDS)
 
-if(SECRET_FOUND)
+if(SECRET_FOUND AND USE_SECRET_STORAGE)
     list(APPEND HEADERS src/SecretServiceStorage.h)
     list(APPEND SOURCES src/SecretServiceStorage.cpp)
-endif(SECRET_FOUND)
+else(SECRET_FOUND AND USE_SECRET_STORAGE)
+    if(USE_SECRET_STORAGE)
+        message(FATAL_ERROR "libsecret not found, secret system storage not accessable.")
+    endif(USE_SECRET_STORAGE)
+endif(SECRET_FOUND AND USE_SECRET_STORAGE)
 
 add_library(${PROJECT_NAME} MODULE ${HEADERS} ${SOURCES})
 
@@ -57,10 +68,10 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-    -DWINPORT_DIRECT
-    -DUNICODE
-    -DFAR_DONT_USE_INTERNALS
-    -DPLUGIN_NAME="${PROJECT_NAME}"
+    WINPORT_DIRECT
+    UNICODE
+    FAR_DONT_USE_INTERNALS
+    PLUGIN_NAME="${PROJECT_NAME}"
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE ./inc)
@@ -76,17 +87,17 @@ target_link_libraries(${PROJECT_NAME}
     ${UUID_LIBRARIES}
 )
 
-if(OPENSSL_FOUND)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_OPENSSL)
+if(OPENSSL_FOUND AND STORE_ENCRYPTED_PASSWORDS)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_OPENSSL)
     target_include_directories(${PROJECT_NAME} PRIVATE ${OPENSSL_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} ${OPENSSL_CRYPTO_LIBRARY})
-endif(OPENSSL_FOUND)
+endif(OPENSSL_FOUND AND STORE_ENCRYPTED_PASSWORDS)
 
-if(SECRET_FOUND)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DUSE_SECRET_STORAGE)
+if(SECRET_FOUND AND USE_SECRET_STORAGE)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_SECRET_STORAGE)
     target_include_directories(${PROJECT_NAME} PRIVATE ${SECRET_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} ${SECRET_LIBRARIES})
-endif(SECRET_FOUND)
+endif(SECRET_FOUND AND USE_SECRET_STORAGE)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${INSTALL_DIR}/Plugins/${PROJECT_NAME}/plug"
