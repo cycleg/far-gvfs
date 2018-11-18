@@ -74,12 +74,13 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     PLUGIN_NAME="${PROJECT_NAME}"
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ./inc)
-target_include_directories(${PROJECT_NAME} PRIVATE ../far2l)
-target_include_directories(${PROJECT_NAME} PRIVATE ../far2l/Include)
-target_include_directories(${PROJECT_NAME} PRIVATE ../WinPort)
-target_include_directories(${PROJECT_NAME} PRIVATE ${GTKMM_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PRIVATE ${UUID_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PRIVATE
+    ../far2l
+    ../far2l/Include
+    ../WinPort
+    ${GTKMM_INCLUDE_DIRS}
+    ${UUID_INCLUDE_DIRS}
+)
 
 target_link_libraries(${PROJECT_NAME}
     utils
