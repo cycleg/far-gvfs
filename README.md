@@ -22,7 +22,7 @@ that support GVFS (SFTP, WebDAV, SAMBA, etc.).
 ## Зависимости / Dependencies
 
 * gtkmm-3.0 (возможно, будет работать и с более ранней 2 версией / may work
-  with versions prior to 2);
+  with versions prior to 3);
 * libuuid;
 * OpenSSL версии 1.0.2 и старше (необязательная/optional);
 * libsecret версии 0.18.5 и старше (необязательная/optional).
@@ -54,7 +54,8 @@ then _the passwords are stored almost unencrypted_!
 "CMakeLists.txt" дополнения имются соответствующие опции:
 "STORE_ENCRYPTED_PASSWORDS" и "USE_SECRET_STORAGE". Если опция отключена, то
 дополнение соберется без отключенной возможности, даже если нужные зависимости
-установлены.
+доступны. И наоборот, если опция включена, то в отсутствие зависимостей сборка
+дополнения прервется с ошибкой.
 
 Для сборки дополнение помещается в дерево исходного кода far2l в виде
 поддиректории. Hапример, если код far2l развернут в директорию "far2l",
@@ -88,7 +89,7 @@ To work the plugin in the target OS should be installed:
 * поддержка GVFS;
 * libuuid (пакет/package libuuid1 в/in Debian);
 * libssl (необязательно/optional);
-* libsecret (пакет libsecret-1, необязательно/optional).
+* libsecret (пакет/package libsecret-1, необязательно/optional).
 
 ## Использование / Using
 
