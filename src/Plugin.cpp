@@ -144,7 +144,7 @@ int Plugin::configure(int item)
     return ret;
 }
 
-HANDLE Plugin::openPlugin(int openFrom, intptr_t item)
+HANDLE Plugin::openPlugin(int openFrom, INT_PTR item)
 {
     UNUSED(openFrom)
     UNUSED(item)

@@ -34,7 +34,7 @@ SHAREDSYMBOL int WINAPI ConfigureW(int item)
     return Plugin::getInstance().configure(item);
 }
 
-SHAREDSYMBOL HANDLE WINAPI OpenPluginW(int openFrom, intptr_t item)
+SHAREDSYMBOL HANDLE WINAPI OpenPluginW(int openFrom, INT_PTR item)
 {
     return Plugin::getInstance().openPlugin(openFrom, item);
 }

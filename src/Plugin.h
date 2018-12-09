@@ -67,7 +67,7 @@ public:
     void exitFar();
     void getPluginInfo(PluginInfo* pi);
     int configure(int item);
-    HANDLE openPlugin(int openFrom, intptr_t item);
+    HANDLE openPlugin(int openFrom, INT_PTR item);
     void closePlugin(HANDLE Plugin);
     void getOpenPluginInfo(HANDLE Plugin, OpenPluginInfo* pluginInfo);
     int getFindData(HANDLE Plugin, PluginPanelItem** PanelItem, int* itemsNumber, int OpMode);
