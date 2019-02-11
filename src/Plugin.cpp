@@ -248,7 +248,7 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
             }
             if (EditResourceDlg(m_pPsi, it->second))
             {
-                if (checkMointpointDuplicate(it->second))
+                if (checkMountpointDuplicate(it->second))
                 {
                   const wchar_t* msgItems[2] = { nullptr };
                   msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
@@ -281,7 +281,7 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
         MountPoint point(MountPointStorage::PointFactory());
         if (EditResourceDlg(m_pPsi, point))
         {
-            if (checkMointpointDuplicate(point))
+            if (checkMountpointDuplicate(point))
             {
               const wchar_t* msgItems[2] = { nullptr };
               msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
@@ -405,7 +405,7 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
         // user cancelled operation
         return -1;
     }
-    if (checkMointpointDuplicate(point))
+    if (checkMountpointDuplicate(point))
       {
           const wchar_t* msgItems[2] = { nullptr };
           msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
@@ -657,7 +657,7 @@ void Plugin::checkResourcesStatus()
     m_pPsi.RestoreScreen(hScreen);
 }
 
-bool Plugin::checkMointpointDuplicate(const MountPoint& point) const
+bool Plugin::checkMountpointDuplicate(const MountPoint& point) const
 {
     auto it = m_mountPoints.find(point.getUrl());
     // новый ресурс
