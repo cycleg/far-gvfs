@@ -70,6 +70,7 @@ enum LngStringsID
   MPasswordWithoutUserError,
   MAnonymousConnectionPassword,
   MFirstUnmountResource,
+  MResourceAlreadyExists,
 
   MResourceMount,
   MResourceStatus,

@@ -60,6 +60,7 @@
 "Password without user!"
 "Anonymous mount does not need password."
 "First unmount the resource."
+"Exactly same resource already exists."
 
 "Resource mount"
 "Resource status"

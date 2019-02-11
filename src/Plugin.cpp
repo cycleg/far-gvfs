@@ -248,6 +248,15 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
             }
             if (EditResourceDlg(m_pPsi, it->second))
             {
+                if (checkMointpointDuplicate(it->second))
+                {
+                  const wchar_t* msgItems[2] = { nullptr };
+                  msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+                  msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
+                  m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                                 nullptr, msgItems, ARRAYSIZE(msgItems), 0);
+                  return 1;
+                }
                 std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
                 // запираем "вручную", чтобы освободить мутекс до завершения
                 // метода и избежать клинча в checkResourcesStatus()
@@ -272,6 +281,15 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
         MountPoint point(MountPointStorage::PointFactory());
         if (EditResourceDlg(m_pPsi, point))
         {
+            if (checkMointpointDuplicate(point))
+            {
+              const wchar_t* msgItems[2] = { nullptr };
+              msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+              msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
+              m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                             nullptr, msgItems, ARRAYSIZE(msgItems), 0);
+              return 1;
+            }
             std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
             lck.lock();
             MountPointStorage storage(m_registryRoot);
@@ -387,11 +405,24 @@ int Plugin::makeDirectory(HANDLE Plugin, const wchar_t** Name, int OpMode)
         // user cancelled operation
         return -1;
     }
-    std::lock_guard<std::mutex> lck(m_pointsMutex);
-    MountPointStorage storage(m_registryRoot);
-    // TODO: save error
-    storage.Save(point);
-    m_mountPoints.insert(std::pair<std::wstring, MountPoint>(point.getUrl(), point));
+    if (checkMointpointDuplicate(point))
+      {
+          const wchar_t* msgItems[2] = { nullptr };
+          msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+          msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
+          m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                         nullptr, msgItems, ARRAYSIZE(msgItems), 0);
+      }
+      else
+      {
+          std::lock_guard<std::mutex> lck(m_pointsMutex);
+          MountPointStorage storage(m_registryRoot);
+          // TODO: save error
+          storage.Save(point);
+          m_mountPoints.insert(
+              std::pair<std::wstring, MountPoint>(point.getUrl(), point)
+          );
+      }
     return 1;
 }
 
@@ -624,4 +655,16 @@ void Plugin::checkResourcesStatus()
         mountPoint.second.mountCheck(&service);
     }
     m_pPsi.RestoreScreen(hScreen);
+}
+
+bool Plugin::checkMointpointDuplicate(const MountPoint& point) const
+{
+    auto it = m_mountPoints.find(point.getUrl());
+    // новый ресурс
+    if (it == m_mountPoints.end()) return false;
+    // он сам
+    if (it->second.getStorageId() == point.getStorageId()) return false;
+    if (it->second.getUser() != point.getUser()) return false;
+    // точная копия: тот же URL, тот же пользователь
+    return true;
 }
