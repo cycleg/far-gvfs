@@ -142,7 +142,7 @@ private:
     /// Ресурс не является копией самого себя, потому что в этом случае
     /// совпадут еще и идентификаторы в хранилище.
     ///
-    bool checkMountpointDuplicate(const MountPoint& point) const;
+    bool checkMountpointDuplicate(MountPoint const& point) const;
 
     Options Opt; ///< Параметры экземпляра плагина.
     KeyBarTitlesHelper m_keyBar; ///< Элемент управления посказками о

@@ -246,9 +246,10 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
                                nullptr, msgItems, ARRAYSIZE(msgItems), 0);
                 return 1;
             }
-            if (EditResourceDlg(m_pPsi, it->second))
+            MountPoint changedMountPt(it->second);
+            if (EditResourceDlg(m_pPsi, changedMountPt))
             {
-                if (checkMountpointDuplicate(it->second))
+                if (checkMountpointDuplicate(changedMountPt))
                 {
                   const wchar_t* msgItems[2] = { nullptr };
                   msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
@@ -262,7 +263,6 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
                 // метода и избежать клинча в checkResourcesStatus()
                 lck.lock();
                 MountPointStorage storage(m_registryRoot);
-                MountPoint changedMountPt(it->second);
                 m_mountPoints.erase(it);
                 m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
                     changedMountPt.getUrl(), changedMountPt
@@ -657,14 +657,12 @@ void Plugin::checkResourcesStatus()
     m_pPsi.RestoreScreen(hScreen);
 }
 
-bool Plugin::checkMountpointDuplicate(const MountPoint& point) const
+bool Plugin::checkMountpointDuplicate(MountPoint const& point) const
 {
     auto it = m_mountPoints.find(point.getUrl());
     // новый ресурс
     if (it == m_mountPoints.end()) return false;
     // он сам
     if (it->second.getStorageId() == point.getStorageId()) return false;
-    if (it->second.getUser() != point.getUser()) return false;
-    // точная копия: тот же URL, тот же пользователь
-    return true;
+    return (it->second == point);
 }

@@ -172,6 +172,19 @@ class MountPoint
     { m_askPassword = ask; return *this; }
 
     ///
+    /// Сравнить два ресурса на равенство.
+    ///
+    /// @param [in] other Ресурс для сравнения.
+    /// @return Равны ли ресурсы.
+    ///
+    /// Два ресурса равны, если у них равны URL и имя пользователя.
+    ///
+    inline bool operator==(MountPoint const& other) const
+    {
+      return (m_url == other.m_url) && (m_user == other.m_user);
+    }
+
+    ///
     /// Транслирует схему из URI ресурса в транспортный протокл.
     ///
     /// @param [in] scheme Схема в виде строки.
