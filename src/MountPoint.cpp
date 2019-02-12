@@ -3,16 +3,16 @@
 #include "GvfsService.h"
 #include "MountPoint.h"
 
-MountPoint::MountPoint(const MountPoint& other)
+MountPoint::MountPoint(const MountPoint& other):
+    m_proto(other.m_proto),
+    m_url(other.m_url),
+    m_user(other.m_user),
+    m_password(other.m_password),
+    m_mountPointPath(other.m_mountPointPath),
+    m_shareName(other.m_shareName),
+    m_storageId(other.m_storageId),
+    m_askPassword(other.m_askPassword)
 {
-    m_proto = other.m_proto;
-    m_url = other.m_url;
-    m_user = other.m_user;
-    m_password = other.m_password;
-    m_mountPointPath = other.m_mountPointPath;
-    m_shareName = other.m_shareName;
-    m_storageId = other.m_storageId;
-    m_askPassword = other.m_askPassword;
 }
 
 MountPoint& MountPoint::operator=(const MountPoint& other)
