@@ -11,7 +11,8 @@ MountPoint::MountPoint(const MountPoint& other):
     m_mountPointPath(other.m_mountPointPath),
     m_shareName(other.m_shareName),
     m_storageId(other.m_storageId),
-    m_askPassword(other.m_askPassword)
+    m_askPassword(other.m_askPassword),
+    m_wasMounted(other.m_wasMounted),
 {
 }
 
@@ -25,12 +26,14 @@ MountPoint& MountPoint::operator=(const MountPoint& other)
     m_shareName = other.m_shareName;
     m_storageId = other.m_storageId;
     m_askPassword = other.m_askPassword;
+    m_wasMounted = other.m_wasMounted
     return *this;
 }
 
 MountPoint::MountPoint():
     m_proto(EProtocol::Unknown),
-    m_askPassword(false)
+    m_askPassword(false),
+    m_wasMounted(false)
 {
 }
 
@@ -53,7 +56,11 @@ bool MountPoint::mount(GvfsService* service)
 
     // пароль спрашивают перед монтированием, зачищаем его
     if (m_askPassword) m_password.clear();
-    if (isMounted()) return true;
+    if (isMounted())
+    {
+      m_wasMounted = true;
+      return true;
+    }
     if (url.empty()) return false;
 
     bool success = service->mount(url, userName, password);
@@ -62,13 +69,18 @@ bool MountPoint::mount(GvfsService* service)
         m_proto = MountPoint::SchemeToProto(service->getMountScheme());
         StrMB2Wide(service->getMountPath(), m_mountPointPath);
         StrMB2Wide(service->getMountName(), m_shareName);
+        m_wasMounted = true;
     }
     return success;
 }
 
 bool MountPoint::unmount(GvfsService* service)
 {
-    if (!isMounted()) return true;
+    if (!isMounted())
+    {
+        m_wasMounted = false;
+        return true;
+    }
 
     std::string url(StrWide2MB(this->m_url));
     if (url.empty()) return false;
@@ -81,6 +93,7 @@ bool MountPoint::unmount(GvfsService* service)
     catch (const GvfsServiceException& e)
     {
         // exception equal to unmount
+        m_wasMounted = false;
         m_shareName.clear();
         m_mountPointPath.clear();
         m_proto = EProtocol::Unknown;
@@ -88,6 +101,7 @@ bool MountPoint::unmount(GvfsService* service)
     }
     if (success)
     {
+        m_wasMounted = false;
         m_shareName.clear();
         m_mountPointPath.clear();
         m_proto = EProtocol::Unknown;
@@ -100,8 +114,9 @@ void MountPoint::mountCheck(GvfsService* service)
     std::string url(StrWide2MB(m_url));
     if (url.empty())
     {
-        m_mountPointPath.clear();
+        m_wasMounted = false;
         m_shareName.clear();
+        m_mountPointPath.clear();
         m_proto = EProtocol::Unknown;
         return;
     }
@@ -113,6 +128,7 @@ void MountPoint::mountCheck(GvfsService* service)
         }
         else
         {
+            m_wasMounted = false;
             m_shareName.clear();
             m_mountPointPath.clear();
             m_proto = EProtocol::Unknown;
