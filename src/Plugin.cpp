@@ -79,7 +79,7 @@ void Plugin::exitFar()
         {
             // unmount all known VFS
             bool needUnmount = mntPoint.second.isMounted();
-            if Configuration::Instance()->unmountThisSessionOnly()
+            if (Configuration::Instance()->unmountThisSessionOnly())
               // unmount all VFS, mounted in current session
               needUnmount = needUnmount && mntPoint.second.wasMounted();
             if (needUnmount)

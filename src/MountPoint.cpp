@@ -12,7 +12,7 @@ MountPoint::MountPoint(const MountPoint& other):
     m_shareName(other.m_shareName),
     m_storageId(other.m_storageId),
     m_askPassword(other.m_askPassword),
-    m_wasMounted(other.m_wasMounted),
+    m_wasMounted(other.m_wasMounted)
 {
 }
 
@@ -26,7 +26,7 @@ MountPoint& MountPoint::operator=(const MountPoint& other)
     m_shareName = other.m_shareName;
     m_storageId = other.m_storageId;
     m_askPassword = other.m_askPassword;
-    m_wasMounted = other.m_wasMounted
+    m_wasMounted = other.m_wasMounted;
     return *this;
 }
 

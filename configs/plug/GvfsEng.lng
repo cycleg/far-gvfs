@@ -23,6 +23,7 @@
 
 "GVFS panel"
 "Unmount resources at FAR exit"
+"...but mounted in current session only"
 "Store passwords in system secret storage"
 "Add to &Disks menu"
 "Disks menu &hotkey ('1'-'9'). Leave empty to autoassign"
