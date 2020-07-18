@@ -7,9 +7,9 @@
 #include "plugin.hpp"
 #include "dialogs.h"
 
-#define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, item, 0))
-#define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, item, 0) == BSTATE_CHECKED)
-#define DLG_GET_COMBOBOXPOS(info, hDlg, item) info.SendDlgMessage(hDlg, DM_LISTGETCURPOS, item, 0)
+#define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, static_cast<int>(item), 0))
+#define DLG_GET_CHECKBOX(info, hDlg, item) (info.SendDlgMessage(hDlg, DM_GETCHECK, static_cast<int>(item), 0) == BSTATE_CHECKED)
+#define DLG_GET_COMBOBOXPOS(info, hDlg, item) info.SendDlgMessage(hDlg, DM_LISTGETCURPOS, static_cast<int>(item), 0)
 
 namespace {
 
@@ -59,7 +59,7 @@ void InitDialogItems(PluginStartupInfo& info,
     }
 }
 
-enum EEditResourceDlg
+enum class EEditResourceDlg: int
 {
   ResourcePathLabel = 1,
   ResourcePathInput,
@@ -74,18 +74,19 @@ enum EEditResourceDlg
 
 LONG_PTR WINAPI EditResourceDlgProc(HANDLE hDlg, int msg, int param1, LONG_PTR param2)
 {
-    if ((msg == DN_BTNCLICK) && (param1 == EEditResourceDlg::AskPasswordInput))
+    if ((msg == DN_BTNCLICK) &&
+        (static_cast<EEditResourceDlg>(param1) == EEditResourceDlg::AskPasswordInput))
     {
         // password input enable/disable if checkbox unset/set 
-        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, EEditResourceDlg::PasswordLabel, param2 == 0);
-        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, EEditResourceDlg::PasswordInput, param2 == 0);
+        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, static_cast<int>(EEditResourceDlg::PasswordLabel), param2 == 0);
+        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, static_cast<int>(EEditResourceDlg::PasswordInput), param2 == 0);
         if (param2)
         {
           // clear password input
           FarDialogItemData data;
           data.PtrLength = 0;
           data.PtrData = nullptr;
-          startupInfo->SendDlgMessage(hDlg, DM_SETTEXT, EEditResourceDlg::PasswordInput, (LONG_PTR)&data);
+          startupInfo->SendDlgMessage(hDlg, DM_SETTEXT, static_cast<int>(EEditResourceDlg::PasswordInput), (LONG_PTR)&data);
         }
     }
     return startupInfo->DefDlgProc(hDlg, msg, param1, param2);
@@ -140,7 +141,7 @@ bool EditResourceDlg(PluginStartupInfo& info, MountPoint& mountPoint)
     info.DialogFree(hDlg);
     startupInfo = nullptr;
     // check user input
-    if ((ret == -1) || (ret == EEditResourceDlg::CancelButton))
+    if ((ret == -1) || (static_cast<EEditResourceDlg>(ret) == EEditResourceDlg::CancelButton))
     {
         return false;
     }
@@ -218,10 +219,52 @@ bool AskPasswordDlg(PluginStartupInfo& info, MountPoint& mountPoint)
     return true;
 }
 
+enum class EConfigurationEditDlg: int
+{
+  UnmountAtExit = 1
+  , UnmoutThisSessionOnly
+#ifdef USE_SECRET_STORAGE
+  , UseSecretStorage
+#endif
+  , OkButton
+  , CancelButton
+};
+
+LONG_PTR WINAPI ConfigurationEditDlgProc(HANDLE hDlg, int msg, int param1, LONG_PTR param2)
+{
+    if ((msg == DN_BTNCLICK) &&
+        (static_cast<EConfigurationEditDlg>(param1) == EConfigurationEditDlg::UnmountAtExit))
+    {
+        // second checkbox enable/disable if first checkbox unset/set 
+        startupInfo->SendDlgMessage(hDlg, DM_ENABLE, static_cast<int>(EConfigurationEditDlg::UnmoutThisSessionOnly), param2 != 0);
+    }
+    return startupInfo->DefDlgProc(hDlg, msg, param1, param2);
+}
+
 bool ConfigurationEditDlg(PluginStartupInfo& info)
 {
 #ifdef USE_SECRET_STORAGE
-    const int DIALOG_WIDTH = 56;
+    const int DIALOG_WIDTH = 60;
+    const int DIALOG_HEIGHT = 9;
+    std::vector<InitDialogItem> initItems = {
+        { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
+          MConfigTitle, L"", 0 },
+
+        { DI_CHECKBOX, 4, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
+          0, 0, MConfigUnmountAtExit, L"", 0 },
+        { DI_CHECKBOX, 8, 3, 0, 3, 0, Configuration::Instance()->unmountThisSessionOnly(),
+          Configuration::Instance()->unmountAtExit() ? 0 : DIF_DISABLE, 0,
+          MConfigUnmountThisSessionOnly, L"", 0 },
+        { DI_CHECKBOX, 4, 4, 0, 4, 0, Configuration::Instance()->useSecretStorage(),
+          0, 0, MConfigUseSecretService, L"", 0 },
+
+        { DI_BUTTON, 0, 6, 0, 6, 0, 0, DIF_CENTERGROUP, 1,
+          MOk, L"", 0 },
+        { DI_BUTTON, 0, 6, 0, 6, 0, 0, DIF_CENTERGROUP, 0,
+          MCancel, L"", 0 }
+    };
+#else
+    const int DIALOG_WIDTH = 59;
     const int DIALOG_HEIGHT = 8;
     std::vector<InitDialogItem> initItems = {
         { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
@@ -229,27 +272,12 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
 
         { DI_CHECKBOX, 4, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
           0, 0, MConfigUnmountAtExit, L"", 0 },
-        { DI_CHECKBOX, 4, 3, 0, 3, 0, Configuration::Instance()->useSecretStorage(),
-          0, 0, MConfigUseSecretService, L"", 0 },
+        { DI_CHECKBOX, 4, 3, 0, 3, 0, Configuration::Instance()->unmountThisSessionOnly(),
+          0, 0, MConfigUnmountThisSessionOnly, L"", 0 },
 
         { DI_BUTTON, 0, 5, 0, 5, 0, 0, DIF_CENTERGROUP, 1,
           MOk, L"", 0 },
         { DI_BUTTON, 0, 5, 0, 5, 0, 0, DIF_CENTERGROUP, 0,
-          MCancel, L"", 0 }
-    };
-#else
-    const int DIALOG_WIDTH = 50;
-    const int DIALOG_HEIGHT = 7;
-    std::vector<InitDialogItem> initItems = {
-        { DI_DOUBLEBOX, 2, 1, DIALOG_WIDTH - 3, DIALOG_HEIGHT - 2, 0, 0, 0, 0,
-          MConfigTitle, L"", 0 },
-
-        { DI_CHECKBOX, 4, 2, 0, 2, 0, Configuration::Instance()->unmountAtExit(),
-          0, 0, MConfigUnmountAtExit, L"", 0 },
-
-        { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 1,
-          MOk, L"", 0 },
-        { DI_BUTTON, 0, 4, 0, 4, 0, 0, DIF_CENTERGROUP, 0,
           MCancel, L"", 0 }
     };
 #endif
@@ -259,12 +287,13 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
 
     HANDLE hDlg = info.DialogInit(info.ModuleNumber, -1, -1, DIALOG_WIDTH,
                                   DIALOG_HEIGHT, L"Config", dialogItems.data(),
-                                  dialogItems.size(), 0, 0, nullptr, 0);
+                                  dialogItems.size(), 0, 0, ConfigurationEditDlgProc, 0);
     int ret = info.DialogRun(hDlg);
     // get user input
-    bool l_unmountAtExit = DLG_GET_CHECKBOX(info, hDlg, 1);
+    bool l_unmountAtExit = DLG_GET_CHECKBOX(info, hDlg, EConfigurationEditDlg::UnmountAtExit);
+    bool l_unmountThisSessionOnly = DLG_GET_CHECKBOX(info, hDlg, EConfigurationEditDlg::UnmoutThisSessionOnly);
 #ifdef USE_SECRET_STORAGE
-    bool l_useSecretStorage = DLG_GET_CHECKBOX(info, hDlg, 2);
+    bool l_useSecretStorage = DLG_GET_CHECKBOX(info, hDlg, EConfigurationEditDlg::UseSecretStorage);
 #endif
     info.DialogFree(hDlg);
     startupInfo = nullptr;
@@ -274,6 +303,7 @@ bool ConfigurationEditDlg(PluginStartupInfo& info)
         return false;
     }
     Configuration::Instance()->setUnmountAtExit(l_unmountAtExit);
+    Configuration::Instance()->setUnmountThisSessionOnly(l_unmountThisSessionOnly);
 #ifdef USE_SECRET_STORAGE
     Configuration::Instance()->setUseSecretStorage(l_useSecretStorage);
 #endif

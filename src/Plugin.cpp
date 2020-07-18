@@ -75,10 +75,14 @@ void Plugin::exitFar()
     GvfsServiceMonitor::instance().quit();
     if (Configuration::Instance()->unmountAtExit())
     {
-        // unmount all VFS, mounted in current session
         for (auto& mntPoint : m_mountPoints)
         {
-            if (mntPoint.second.isMounted())
+            // unmount all known VFS
+            bool needUnmount = mntPoint.second.isMounted();
+            if (Configuration::Instance()->unmountThisSessionOnly())
+              // unmount all VFS, mounted in current session
+              needUnmount = needUnmount && mntPoint.second.wasMounted();
+            if (needUnmount)
                 try
                 {
                     GvfsService service;

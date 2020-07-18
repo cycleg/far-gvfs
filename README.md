@@ -160,10 +160,12 @@ Plugin is added to the far2l device selection menu under the name "GVFS," as
 well as in the configuration menu and plugin commands. Far-gvfs configuration
 parameters:
 
-* отсоединять или нет известные смонтированные ресурсы при выходе из far2l. По
+* Отсоединять или нет известные смонтированные ресурсы при выходе из far2l. По
   умолчанию отсоединяются. / disconnect or not known known resources when exiting
   far2l. By default, they are disconnected.
-* использовать или нет для хранения паролей системные безопасные хранилища. По
+* Если ресурсы отсоединяются, то делать это только для ресурсов, смонтированных в
+  текущем сеансе far2l, или для всех смонтированных.
+* Использовать или нет для хранения паролей системные безопасные хранилища. По
   умолчанию не используются. Параметр может отсутствовать, если дополнение
   собрано без поддержки безопасных хранилищ. / use or not to store passwords for
   system-safe storage. By default not used. The parameter can be absent if the
@@ -171,7 +173,7 @@ parameters:
 
 Команды/Commands:
 
-* переключение текущей панели на панель самого дополнения. / Switch the current
+* Переключение текущей панели на панель самого дополнения. / Switch the current
   panel to the panel of the plugin itself.
 
 ## Известные проблемы / Known issues
