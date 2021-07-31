@@ -3,6 +3,10 @@ project(gvfspanel)
 OPTION(STORE_ENCRYPTED_PASSWORDS "Encrypt stored passwords." ON)
 OPTION(USE_SECRET_STORAGE "Store passwords in system secret storage." ON)
 
+message(STATUS "GVFS panel plugin options:")
+message(STATUS "  \"Encrypt stored passwords\" is ${STORE_ENCRYPTED_PASSWORDS};")
+message(STATUS "  \"Store passwords in system secret storage\" is ${STORE_ENCRYPTED_PASSWORDS}.")
+
 set(HEADERS
     src/Configuration.h
     src/dialogs.h
@@ -109,3 +113,5 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/configs
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/configs "${INSTALL_DIR}/Plugins/${PROJECT_NAME}"
 )
+
+message(STATUS "GVFS panel plugin configured.")
