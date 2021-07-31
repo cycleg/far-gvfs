@@ -229,9 +229,9 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
         ((controlState == PKF_ALT) && (key >= VK_F3) && (key <= VK_F6)))
     {
         // block keys
-        return 1;
+        return 1; // return 1: far should not handle this keys
     }
-    else if ((controlState == 0) && (key == VK_F4))
+    if ((controlState == 0) && (key == VK_F4))
     {
         // edit resource
         PluginPanelItem* item = getPanelCurrentItem(Plugin);
@@ -239,75 +239,69 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
         std::wstring name = item->CustomColumnData[1];
         free(item);
         auto it = m_mountPoints.find(name);
-        if (it != m_mountPoints.end())
+        if (it == m_mountPoints.end()) return 1; // no point, drop key
+        if (it->second.isMounted())
         {
-            if (it->second.isMounted())
-            {
-                const wchar_t* msgItems[2] = { nullptr };
-                msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
-                msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MFirstUnmountResource);
-                m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                               nullptr, msgItems, ARRAYSIZE(msgItems), 0);
-                return 1;
-            }
-            MountPoint changedMountPt(it->second);
-            if (EditResourceDlg(m_pPsi, changedMountPt))
-            {
-                if (checkMountpointDuplicate(changedMountPt))
-                {
-                  const wchar_t* msgItems[2] = { nullptr };
-                  msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
-                  msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
-                  m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                                 nullptr, msgItems, ARRAYSIZE(msgItems), 0);
-                  return 1;
-                }
-                std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
-                // запираем "вручную", чтобы освободить мутекс до завершения
-                // метода и избежать клинча в checkResourcesStatus()
-                lck.lock();
-                MountPointStorage storage(m_registryRoot);
-                m_mountPoints.erase(it);
-                m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
-                    changedMountPt.getUrl(), changedMountPt
-                ));
-                // TODO: save error
-                storage.Save(changedMountPt);
-                lck.unlock();
-                m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
-            }
+            const wchar_t* msgItems[2] = { nullptr };
+            msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+            msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MFirstUnmountResource);
+            m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                           nullptr, msgItems, ARRAYSIZE(msgItems), 0);
+            return 1;
         }
-        return 1; // return 1: far should not handle this key
+        MountPoint changedMountPt(it->second);
+        if (!EditResourceDlg(m_pPsi, changedMountPt)) return 1;
+        if (checkMountpointDuplicate(changedMountPt))
+        {
+          const wchar_t* msgItems[2] = { nullptr };
+          msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+          msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
+          m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                         nullptr, msgItems, ARRAYSIZE(msgItems), 0);
+          return 1;
+        }
+        std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
+        // запираем "вручную", чтобы освободить мутекс до завершения
+        // метода и избежать клинча в checkResourcesStatus()
+        lck.lock();
+        MountPointStorage storage(m_registryRoot);
+        m_mountPoints.erase(it);
+        m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
+            changedMountPt.getUrl(), changedMountPt
+        ));
+        // TODO: save error
+        storage.Save(changedMountPt);
+        lck.unlock();
+        m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
+        return 1;
     }
-    else if ((controlState == PKF_SHIFT) && (key == VK_F4))
+    if ((controlState == PKF_SHIFT) && (key == VK_F4))
     {
         // add new resource
         MountPoint point(MountPointStorage::PointFactory());
-        if (EditResourceDlg(m_pPsi, point))
+        if (!EditResourceDlg(m_pPsi, point)) return 1;
+        if (checkMountpointDuplicate(point))
         {
-            if (checkMountpointDuplicate(point))
-            {
-              const wchar_t* msgItems[2] = { nullptr };
-              msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
-              msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
-              m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
-                             nullptr, msgItems, ARRAYSIZE(msgItems), 0);
-              return 1;
-            }
-            std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
-            lck.lock();
-            MountPointStorage storage(m_registryRoot);
-            m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
-                point.getUrl(), point
-            ));
-            // TODO: save error
-            storage.Save(point);
-            lck.unlock();
-            m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
+            const wchar_t* msgItems[2] = { nullptr };
+            msgItems[0] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceTitle);
+            msgItems[1] = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MResourceAlreadyExists);
+            m_pPsi.Message(m_pPsi.ModuleNumber, FMSG_WARNING | FMSG_MB_OK,
+                           nullptr, msgItems, ARRAYSIZE(msgItems), 0);
+            return 1;
         }
+        std::unique_lock<std::mutex> lck(m_pointsMutex, std::defer_lock);
+        lck.lock();
+        MountPointStorage storage(m_registryRoot);
+        m_mountPoints.insert(std::pair<std::wstring, MountPoint>(
+            point.getUrl(), point
+        ));
+        // TODO: save error
+        storage.Save(point);
+        lck.unlock();
+        m_pPsi.Control(Plugin, FCTL_UPDATEPANEL, 0, 0);
         return 1;
     }
-    else if ((controlState == PKF_SHIFT) && (key == VK_F8))
+    if ((controlState == PKF_SHIFT) && (key == VK_F8))
     {
         // unmount selected resource
         PluginPanelItem* item = getPanelCurrentItem(Plugin);
@@ -323,7 +317,7 @@ int Plugin::processKey(HANDLE Plugin, int key, unsigned int controlState)
         }
         return 1;
     }
-    else if ((controlState == PKF_CONTROL) && (key == 'R'))
+    if ((controlState == PKF_CONTROL) && (key == 'R'))
     {
         // refresh resources status
         checkResourcesStatus();
