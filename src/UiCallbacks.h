@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <glibmm/ustring.h>
-#include <plugin.hpp>
+#include <farplug-wide.h>
 
 /// 
 /// @brief Обратные вызовы в интерфейс пользователя (UI) из операций с ресурсами.

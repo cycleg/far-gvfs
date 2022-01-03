@@ -78,16 +78,25 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     PLUGIN_NAME="${PROJECT_NAME}"
 )
 
+if(NOT DEFINED FAR2L_PLUGINS_INCLUDE_DIRS)
+    set(FAR2L_PLUGINS_INCLUDE_DIRS
+        ${CMAKE_SOURCE_DIR}/far2l/far2sdk
+        ${CMAKE_SOURCE_DIR}/WinPort
+    )
+endif(NOT DEFINED FAR2L_PLUGINS_INCLUDE_DIRS)
+
 target_include_directories(${PROJECT_NAME} PRIVATE
-    ../far2l
-    ../far2l/Include
-    ../WinPort
+    ${FAR2L_PLUGINS_INCLUDE_DIRS}
     ${GTKMM_INCLUDE_DIRS}
     ${UUID_INCLUDE_DIRS}
 )
 
+if(NOT DEFINED FAR2L_PLUGINS_LIBRARIES)
+    set(FAR2L_PLUGINS_LIBRARIES utils)
+endif(NOT DEFINED FAR2L_PLUGINS_LIBRARIES)
+
 target_link_libraries(${PROJECT_NAME}
-    utils
+    ${FAR2L_PLUGINS_LIBRARIES}
     ${GTKMM_LIBRARIES}
     ${UUID_LIBRARIES}
 )

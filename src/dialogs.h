@@ -5,7 +5,7 @@
 
 #include <string>
 #include <vector>
-#include "plugin.hpp"
+#include <farplug-wide.h>
 #include "MountPoint.h"
 
 ///

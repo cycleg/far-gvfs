@@ -5,7 +5,7 @@
 #include <mutex>
 #include <vector>
 #include <windows.h>
-#include <plugin.hpp>
+#include <farplug-wide.h>
 #include "KeyBarTitlesHelper.h"
 #include "MountPoint.h"
 

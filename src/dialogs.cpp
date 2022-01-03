@@ -4,7 +4,6 @@
 #include "Configuration.h"
 #include "LngStringIDs.h"
 #include "MountPoint.h"
-#include "plugin.hpp"
 #include "dialogs.h"
 
 #define DLG_GET_TEXTPTR(info, hDlg, item) reinterpret_cast<const wchar_t*>(info.SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, static_cast<int>(item), 0))

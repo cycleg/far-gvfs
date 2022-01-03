@@ -1,7 +1,6 @@
 #include <cstring>
+#include <farplug-wide.h>
 #include "KeyBarTitlesHelper.h"
-
-#include "plugin.hpp"
 
 KeyBarTitlesHelper::KeyBarTitlesHelper() :
     m_keyBar { }
