@@ -11,6 +11,9 @@
 // Gio::MountOperation. Приходится использовать оригинальный C-интерфейс GIO
 // и глобальную переменную mountCallbacksRegistry. См. GvfsService::mount() и
 // слот GvfsService::on_ask_question().
+//
+// Ошибка исправлена в glibmm v2.66, см. glibmmconf.h. Код сохранен для
+// обратной совместимости.
 
 #ifndef USE_GIO_MOUNTOPERATION_ONLY
 
