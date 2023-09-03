@@ -12,8 +12,9 @@
 // и глобальную переменную mountCallbacksRegistry. См. GvfsService::mount() и
 // слот GvfsService::on_ask_question().
 //
-// Ошибка исправлена в glibmm v2.66, см. glibmmconf.h. Код сохранен для
-// обратной совместимости.
+// Ошибка, казалась, исправлена в glibmm v2.66, однако снова проявилась в
+// Debian Trixie. Текущая версия glibmm в ней -- 2.66.6, для нее по-прежнему
+// используется "объезд", см. glibmmconf.h. Необходимо дальнейшее наблюдение.
 
 #ifndef USE_GIO_MOUNTOPERATION_ONLY
 
