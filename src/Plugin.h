@@ -1,11 +1,10 @@
 #pragma once
 
+#include <farplug-wide.h>
 #include <map>
 #include <memory>
 #include <mutex>
 #include <vector>
-#include <windows.h>
-#include <farplug-wide.h>
 #include "KeyBarTitlesHelper.h"
 #include "MountPoint.h"
 
