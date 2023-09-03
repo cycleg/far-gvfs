@@ -167,6 +167,7 @@ void Plugin::getOpenPluginInfo(HANDLE Plugin, OpenPluginInfo* pluginInfo)
 
     static const wchar_t* pluginPanelTitle = m_pPsi.GetMsg(m_pPsi.ModuleNumber, MGvfsPanel);
     pluginInfo->StructSize = sizeof(*pluginInfo);
+    pluginInfo->Flags = OPIF_USEHIGHLIGHTING | OPIF_SHOWPRESERVECASE;
     pluginInfo->PanelTitle = pluginPanelTitle;
     // panel modes
     static struct PanelMode PanelModesArray[10];
@@ -589,12 +590,18 @@ void Plugin::updatePanelItems()
         PluginPanelItem item;
         memset(&item, 0, sizeof(item));
         item.FindData.lpwszFileName = wcsdup(mountPoint.second.getUrl().c_str());
+        if (item.FindData.lpwszFileName == nullptr) {
+#ifndef NDEBUG
+          std::cout << "Plugin::updatePanelItems() can't create panel item (lpwszFileName)" << std::endl;
+#endif // NDEBUG
+          continue;
+        }
         item.FindData.dwFileAttributes = FILE_ATTRIBUTE_DIRECTORY;
         item.CustomColumnNumber = 3;
         wchar_t** data = new wchar_t*[3];
-        data[0] = wcsdup(mountPoint.second.isMounted() ? TEXT("*") : TEXT(" ")); //C0
-        data[1] = wcsdup(mountPoint.second.getUrl().c_str()); //C1
-        data[2] = wcsdup(mountPoint.second.getUser().c_str()); //C2
+        data[0] = wcsdup(mountPoint.second.isMounted() ? TEXT("*") : TEXT(" ")); // C0
+        data[1] = wcsdup(mountPoint.second.getUrl().c_str()); // C1
+        data[2] = wcsdup(mountPoint.second.getUser().c_str()); // C2
         item.CustomColumnData = data;
         m_items.push_back(item);
     }
