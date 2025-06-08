@@ -9,7 +9,7 @@
 #include <functional>
 #include <unordered_map>
 #include <mutex>
-#include <utils.h> // far2l/utils
+#include <WideMB.h> // far2l/utils
 #include "SecretServiceStorage.h"
 
 #define UNUSED(x) (void)x;

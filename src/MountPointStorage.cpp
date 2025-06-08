@@ -1,6 +1,7 @@
 #include <cstring>
 #include <windows.h>
-#include <utils.h>
+#include <WideMB.h> // far2l/utils
+#include <PlatformConstants.h> // far2l/utils
 #include <uuid/uuid.h>
 
 #ifdef USE_OPENSSL

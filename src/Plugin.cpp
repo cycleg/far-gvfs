@@ -1,5 +1,6 @@
 #include <iostream> // debug output
-#include <utils.h>
+#include <WideMB.h> // far2l/utils
+#include <PlatformConstants.h> // far2l/utils
 #include "Configuration.h"
 #include "dialogs.h"
 #include "GvfsService.h"

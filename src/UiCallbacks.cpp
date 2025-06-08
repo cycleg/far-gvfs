@@ -1,5 +1,5 @@
 #include <string>
-#include <utils.h>
+#include <WideMB.h> // far2l/utils
 #include "dialogs.h"
 #include "TextFormatter.h"
 #include "UiCallbacks.h"

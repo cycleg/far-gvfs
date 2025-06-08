@@ -1,5 +1,6 @@
 #include <string>
-#include <utils.h> // far2l/utils
+#include <WideMB.h> // far2l/utils
+#include <PlatformConstants.h> // far2l/utils
 #include "GvfsService.h"
 #include "MountPoint.h"
 

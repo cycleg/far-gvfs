@@ -1,5 +1,5 @@
 #include <openssl/aes.h>
-#include <utils.h>
+#include <WideMB.h> // far2l/utils
 #include "Crypto.h"
 
 Crypto::Crypto():

@@ -1,4 +1,4 @@
-#include <utils.h>
+#include <WideMB.h> // far2l/utils
 #include "RegistryStorage.h"
 
 bool RegistryStorage::SetValue(HKEY folder, const std::wstring& field,
